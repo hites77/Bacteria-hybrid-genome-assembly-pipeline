@@ -4,13 +4,13 @@ nextflow.enable.dsl=2
 
 params.pilonMaxIters = 6
 
-// output directory relative to params.outdir
+// output directories relative to params.outdir
 params.o = {}
 params.o.cleanShortReads = 'reads/short_cleaned/'
 params.o.cleanLongReads = 'reads/long_cleaned/'
 params.o.flyeAssembly = 'assembly/flye/'
 params.o.raconPolish = 'assembly/racon/'
-params.o.canuCorrect = 'assembly/canu/'
+params.o.canuCorrect = 'reads/long_canu/'
 params.o.circularise = 'assembly/circlator/'
 params.o.pilonPolish = 'assembly/pilon/'
 params.o.shortReadsCoverage = 'assembly_eval/short_read_coverage/'
@@ -20,7 +20,7 @@ params.o.quastEvaluate = 'assembly_eval/quast/'
 params.o.checkmEvaluate = 'assembly_eval/checkm/'
 params.o.makeSummary = 'summary/'
 
-// TODO validate that dirs all end with a slash
+// TODO validate: all dirs end with a slash, no spaces
 // TODO Extract out env names?
 
 /**
@@ -105,7 +105,7 @@ process flyeAssembly {
 
     script:
     """
-    mkdir -p ${params.o.flyeAssembly}
+    mkdir -p ${params.o.flyeAssembly} # flye can only create 1 dir
     flye --plasmids --threads $params.threads --pacbio-raw $pacbioFq -o ${params.o.flyeAssembly}
     """
 }
@@ -150,7 +150,7 @@ process canuCorrect {
 
     script:
     """
-    canu -correct -p canu -d ${params.o.canuCorrect} genomeSize=5m -pacbio $pacbioFq # useGrid=false
+    canu -correct -p canu -d ${params.o.canuCorrect} genomeSize=5m -pacbio $pacbioFq useGrid=false
     """
 }
 
@@ -171,7 +171,10 @@ process circularise {
 
     script:
     """
-    circlator all $assemblyFa $pacbioFa ${params.o.circularise}
+    # circlator can't handle nested directories
+    circlator all $assemblyFa $pacbioFa circlator-temp
+    mkdir -p ${params.o.circularise}
+    mv circlator-temp/* ${params.o.circularise}
     """
 }
 
@@ -281,7 +284,6 @@ process quastEvaluate {
     path '.exitcode'
     path params.o.quastEvaluate + '*'
     
-
     script:
     """
     quast $assemblyFa --circos -g $prokkaGff -t ${params.threads} --gene-finding --fragmented --conserved-genes-finding --rna-finding -o ${params.o.quastEvaluate}
