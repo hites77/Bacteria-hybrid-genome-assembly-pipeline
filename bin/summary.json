@@ -1,0 +1,25 @@
+{
+    "avg short reads coverage": 273.4592,
+    "short reads mapped": {
+        "total reads": 9428394,
+        "mapped reads:": 9424504,
+        "proportion mapped reads": 0.9995874164783525
+    },
+    "avg long reads coverage": 161.3935,
+    "long reads mapped": {
+        "total reads": 86563,
+        "mapped reads:": 86523,
+        "proportion mapped reads": 0.9995379088063029
+    },
+    "length": 4159529,
+    "contigs": 1,
+    "N50": 4159529,
+    "GC": 0.6025,
+    "CDS": 3868,
+    "is circular": {
+        "contig_1 LN:i:4161755 RC:i:85328 XC:f:1.000000": false
+    },
+    "completeness": 1.0,
+    "contamination": 0.0002787844995818232,
+    "errors": []
+}
