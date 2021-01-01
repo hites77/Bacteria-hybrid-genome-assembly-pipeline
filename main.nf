@@ -2,7 +2,9 @@ nextflow.enable.dsl=2
 
 // shouldn't need to override
 
-// output directory relative to outdir
+params.pilonMaxIters = 6
+
+// output directory relative to params.outdir
 params.o = {}
 params.o.cleanShortReads = 'reads/short_cleaned/'
 params.o.cleanLongReads = 'reads/long_cleaned/'
@@ -11,6 +13,15 @@ params.o.raconPolish = 'assembly/racon/'
 params.o.canuCorrect = 'assembly/canu/'
 params.o.circularise = 'assembly/circlator/'
 params.o.pilonPolish = 'assembly/pilon/'
+params.o.shortReadsCoverage = 'assembly_eval/short_read_coverage/'
+params.o.longReadsCoverage = 'assembly_eval/long_read_coverage/'
+params.o.prokkaAnnotate = 'assembly_eval/prokka/'
+params.o.quastEvaluate = 'assembly_eval/quast/'
+params.o.checkmEvaluate = 'assembly_eval/checkm/'
+params.o.makeSummary = 'summary/'
+
+// TODO validate that dirs all end with a slash
+// TODO Extract out env names?
 
 /**
  * Returns a closure to be used with publishDir's saveAs parameter which ensures
@@ -178,58 +189,220 @@ process pilonPolish {
     path '.command.log'
     path '.exitcode'
     path 'pilon*'
+    path 'final_assembly.fasta', emit: assemblyFa
     path 'incomplete' optional true
 
     script:
     """
-#!/usr/bin/env python3
-import subprocess
-from pathlib import Path
-
-def run(assemblyFasta, illumina1Fastq, illumina2Fastq, pilonJar, threads, maxIters):
-    bamFile = preprocess(assemblyFasta, illumina1Fastq, illumina2Fastq, threads)
-    run_pilon(assemblyFasta, bamFile, 1, pilonJar)
-    for i in range(2, maxIters + 1):
-        changes_file = Path(f"pilon{i-1}.changes")
-        assemblyFasta = f"pilon{i-1}.fasta"
-        if not changes_file.exists() or changes_file.read_text().strip() == '':
-            break
-        bamFile = preprocess(assemblyFasta, illumina1Fastq, illumina2Fastq, threads)
-        run_pilon(assemblyFasta, bamFile, i, pilonJar)
-    clean()
-
-def preprocess(assemblyFasta, illumina1Fastq, illumina2Fastq, threads):
-    bamFile = assemblyFasta[:-len('fasta')] + 'bam'
-    subprocess.run(f"bwa index {assemblyFasta}", shell=True, check=True)
-    subprocess.run(f"bwa mem -t {threads} {assemblyFasta} {illumina1Fastq} {illumina2Fastq} | samtools sort --threads {threads} > {bamFile}", shell=True, check=True)
-    subprocess.run(f"samtools index {bamFile}", shell=True, check=True)
-    return bamFile
-
-def run_pilon(assemblyFasta, bamFile, index, pilonJar):
-    subprocess.run(f"java -Xmx13G -jar \$PILONJAR --genome {assemblyFasta} --frags {bamFile} --changes --output pilon{index}", shell=True, check=True)
-
-def clean():
-    subprocess.run('rm *.bai', shell=True)
-    subprocess.run('rm *.bwt', shell=True)
-    subprocess.run('rm *.amb', shell=True)
-    subprocess.run('rm *.ann', shell=True)
-    subprocess.run('rm *.pac', shell=True)
-    subprocess.run('rm *.sa', shell=True)
-
-run('$assemblyFasta', '$illumina1Fq', '$illumina2Fq', $params.threads, 6)
+    run_pilon.py --assembly $assemblyFa --reads1 $illumina1Fq --reads2 $illumina2Fq --maxiters $params.pilonMaxIters --threads $params.threads
     """
 }
 
-workflow {
-    rawIllumina1Fq = '/home/chloe/Documents/NUS/UROPS/server-data/S8E_3_1/reads/raw/illumina1.fq.gz'
-    rawIllumina2Fq = '/home/chloe/Documents/NUS/UROPS/server-data/S8E_3_1/reads/raw/illumina2.fq.gz'
-    rawPacbioFq = '/home/chloe/Documents/NUS/UROPS/server-data/S8E_3_1/reads/raw/pacbio.fq.gz'
+process shortReadsCoverage {
+    publishDir params.outdir + params.o.shortReadsCoverage, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.shortReadsCoverage)
+    conda params.condaEnvsDir + 'urops-assembly'
+    
+    input:
+    path assemblyFa
+    path illumina1Fq
+    path illumina2Fq
+    
+    output:
+    path '.command.sh'
+    path '.command.log'
+    path '.exitcode'
+    path 'stats.txt'
+    path 'histogram.txt'
+    path 'bbmap_stderr.txt'
+
+    script:
+    """
+    bbmap.sh in1=$illumina1Fq in2=$illumina2Fq ref=$assemblyFa nodisk \
+                covstats=stats.txt covhist=histogram.txt \
+            2> bbmap_stderr.txt
+    """
+}
+
+process longReadsCoverage {
+    publishDir params.outdir + params.o.longReadsCoverage, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.longReadsCoverage)
+    conda params.condaEnvsDir + 'urops-assembly'
+    
+    input:
+    path assemblyFa
+    path pacbioFq
+    
+    output:
+    path '.command.sh'
+    path '.command.log'
+    path '.exitcode'
+    path 'stats.txt'
+    path 'histogram.txt'
+    path 'pileup_stderr.txt'
+    
+
+    script:
+    """
+    minimap2 -a $assemblyFa $pacbioFq > mapping.sam
+    pileup.sh in=mapping.sam out=stats.txt hist=histogram.txt 2> pileup_stderr.txt
+    """
+}
+
+process prokkaAnnotate {
+    publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.prokkaAnnotate)
+    conda params.condaEnvsDir + 'urops-assembly'
+
+    input:
+    path assemblyFa
+    
+    output:
+    path '.command.sh'
+    path '.command.log'
+    path '.exitcode'
+    path params.o.prokkaAnnotate + 'prokka.gff', emit: gff
+    path params.o.prokkaAnnotate + '*', emit: allFiles
+
+    script:
+    """
+    prokka --cpus 0 --outdir ${params.o.prokkaAnnotate} --prefix prokka --addgenes --addmrna --compliant --rfam $assemblyFa
+    """
+}
+
+process quastEvaluate {
+    publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.quastEvaluate)
+    conda params.condaEnvsDir + 'urops-assembly'
+    
+    input:
+    path assemblyFa
+    path prokkaGff
+    
+    output:
+    path '.command.sh'
+    path '.command.log'
+    path '.exitcode'
+    path params.o.quastEvaluate + '*'
+    
+
+    script:
+    """
+    quast $assemblyFa --circos -g $prokkaGff -t ${params.threads} --gene-finding --fragmented --conserved-genes-finding --rna-finding -o ${params.o.quastEvaluate}
+    """
+}
+
+process checkmEvaluate {
+    publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.checkmEvaluate)
+    conda params.condaEnvsDir + 'urops-checkm'
+    
+    input:
+    path assemblyFa
+    
+    output:
+    path '.command.sh'
+    path '.command.log'
+    path '.exitcode'
+    path params.o.checkmEvaluate + '*'
+
+    script:
+    """
+    mkdir input
+    mv $assemblyFasta input/assembly.fna
+    checkm lineage_wf input ${params.o.checkmEvaluate}
+    """
+}
+
+process makeSummary {
+    publishDir params.outdir + params.o.makeSummary, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.makeSummary)
+    conda params.condaEnvsDir + 'urops-assembly'
+
+    // just use process.out for these
+    input:
+    val shortReadsDone
+    val longReadsDone
+    val quastDone
+    val prokkaDone
+    val circlatorDone
+    val checkmDone
+
+    output:
+    path '.command.sh'
+    path '.command.log'
+    path '.exitcode'
+    path 'summary.json'
+
+    script:
+    """
+    assembly_summary.py summary.json \
+        ${params.outdir + params.o.shortReadsCoverage} \
+        ${params.outdir + params.o.longReadsCoverage} \
+        ${params.outdir + params.o.quastEvaluate} \
+        ${params.outdir + params.o.prokkaAnnotate} \
+        ${params.outdir + params.o.circularise} \
+        ${params.outdir + params.o.checkmEvaluate}
+    """
+}
+
+workflow full {
+    rawIllumina1Fq = params.rawIllumina1
+    rawIllumina2Fq = params.rawIllumina2
+    rawPacbioFq = params.rawPacbio
     
     cleanShortReads(rawIllumina1Fq, rawIllumina2Fq)
-    cleanLongReads(rawPacbioFq, cleanShortReads.out.fq1, cleanShortReads.out.fq2)
-    flyeAssembly(cleanLongReads.out.fq)
-    raconPolish(flyeAssembly.out.assemblyFa, cleanLongReads.out.fq)
-    canuCorrect(cleanLongReads.out.fq)
+
+    cleanedShort1 = cleanShortReads.out.fq1
+    cleanedShort2 = cleanShortReads.out.fq2
+
+    cleanLongReads(rawPacbioFq, cleanedShort1, cleanedShort2)
+
+    cleanedLong = cleanLongReads.out.fq
+
+    flyeAssembly(cleanedLong)
+    raconPolish(flyeAssembly.out.assemblyFa, cleanedLong)
+    canuCorrect(cleanedLong)
     circularise(raconPolish.out.assemblyFa, canuCorrect.out.pacbioFa)
-    pilonPolish(circularise.out.assemblyFa, cleanShortReads.out.fq1, cleanShortReads.out.fq2)
+    pilonPolish(circularise.out.assemblyFa, cleanedShort1, cleanedShort2)
+
+    finalAssembly = pilonPolish.out.assemblyFa
+
+    shortReadsCoverage(finalAssembly, cleanedShort1, cleanedShort2)
+    longReadsCoverage(finalAssembly, cleanedLong)
+    prokkaAnnotate(finalAssembly)
+    quastEvaluate(finalAssembly, prokkaAnnotate.out.gff)
+    checkmEvaluate(finalAssembly)
+
+    makeSummary(shortReadsCoverage.out[0], longReadsCoverage.out[0], quastEvaluate.out[0], prokkaAnnotate.out[0], circularise.out[0], checkmEvaluate.out[0])
 }
+
+workflow {
+    full()
+}
+
+// workflow quickTest {
+//     // without canu
+    
+//     rawIllumina1Fq = '/home/chloe/Documents/NUS/UROPS/server-data/S8E_3_1/reads/raw/illumina1.fq.gz'
+//     rawIllumina2Fq = '/home/chloe/Documents/NUS/UROPS/server-data/S8E_3_1/reads/raw/illumina2.fq.gz'
+//     rawPacbioFq = '/home/chloe/Documents/NUS/UROPS/server-data/S8E_3_1/reads/raw/pacbio.fq.gz'
+    
+//     cleanShortReads(rawIllumina1Fq, rawIllumina2Fq)
+
+//     cleanedShort1 = cleanShortReads.out.fq1
+//     cleanedShort2 = cleanShortReads.out.fq2
+
+//     cleanLongReads(rawPacbioFq, cleanedShort1, cleanedShort2)
+
+//     cleanedLong = cleanLongReads.out.fq
+
+//     flyeAssembly(cleanedLong)
+//     raconPolish(flyeAssembly.out.assemblyFa, cleanedLong)
+//     circularise(raconPolish.out.assemblyFa, cleanedLong)
+//     pilonPolish(circularise.out.assemblyFa, cleanedShort1, cleanedShort2)
+
+//     finalAssembly = pilonPolish.out.assemblyFa
+
+//     shortReadsCoverage(finalAssembly, cleanedShort1, cleanedShort2)
+//     longReadsCoverage(finalAssembly, cleanedLong)
+//     prokkaAnnotate(finalAssembly)
+//     quastEvaluate(finalAssembly, prokkaAnnotate.out.gff)
+//     checkmEvaluate(finalAssembly)
+
+//     makeSummary(shortReadsCoverage.out[0], longReadsCoverage.out[0], quastEvaluate.out[0], prokkaAnnotate.out[0], circularise.out[0], checkmEvaluate.out[0])
+// }
