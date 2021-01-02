@@ -1,10 +1,24 @@
 nextflow.enable.dsl=2
 
-// shouldn't need to override
+/// PARAMS START HERE ///
 
+/// Parameters for specific programs/scripts
+
+// maximum number of iterations to run pilon for
 params.pilonMaxIters = 6
 
-// output directories relative to params.outdir
+// args for bin/bbduk_keep_percent.py
+params.bbduk_keep_percent = 80
+params.bbduk_start_trimq = 40
+
+
+// TODO validate params
+
+// results directory (Nextflow's publishDir)
+// must be an absolute path 
+params.outdir = '/home/chloe/asembly-pipeline/results/'
+
+// output directories for each process relative to params.outdir
 params.o = {}
 params.o.cleanShortReads = 'reads/short_cleaned/'
 params.o.cleanLongReads = 'reads/long_cleaned/'
@@ -19,6 +33,8 @@ params.o.prokkaAnnotate = 'assembly_eval/prokka/'
 params.o.quastEvaluate = 'assembly_eval/quast/'
 params.o.checkmEvaluate = 'assembly_eval/checkm/'
 params.o.makeSummary = 'summary/'
+
+/// PARAMS END HERE ///
 
 // TODO validate: all dirs end with a slash, no spaces
 // TODO Extract out env names?
@@ -63,7 +79,7 @@ process cleanShortReads {
             --in1 $illumina1Fq --in2=$illumina2Fq \
             --out1 ${params.o.cleanShortReads}/illumina1.fq --out2 ${params.o.cleanShortReads}/illumina2.fq \
             --infodir ${params.o.cleanShortReads} \
-            --keep_percent 80 --start_trimq 40 --args qtrim=rl minlength=40
+            --keep_percent ${params.bbduk_keep_percent} --start_trimq ${params.bbduk_start_trimq} --args qtrim=rl minlength=40
     """
 }
 

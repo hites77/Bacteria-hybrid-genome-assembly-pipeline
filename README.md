@@ -38,11 +38,14 @@ TODO
 
 ### 1. Set variables
 
-TODO
+All parameters which can be adjusted can be found at the top of `main.nf` and in `nextflow.config`. Parameters which are likely to be device specific (eg. number of threads) are defined in profiles in `nextflow.config`.
+
+Recommended variables to adjust: 
+- Device specific parameters (under a profile in `nextflow.config`)
 
 ### 2. Start the pipeline
 
-There are a few different ways the pipeline can be run:
+There are a few ways to run the pipeline:
 
 **As a job on the NSCC Aspire 1 server:**
 
