@@ -144,7 +144,7 @@ parser.add_argument(
     help="Maximum number of iterations to run pilon",
 )
 
-### EXECUTION ###
+### MAIN ###
 
 if __name__ == "__main__":
     args = vars(parser.parse_args())

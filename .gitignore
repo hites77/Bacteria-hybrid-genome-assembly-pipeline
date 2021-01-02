@@ -11,3 +11,8 @@ htmlcov
 **/.ipynb_checkpoints/
 
 work/
+.nextflow/
+.nextflow.log.*
+nextflow-report.html
+nextflow-trace.tsv
+nextflow-timeline.html

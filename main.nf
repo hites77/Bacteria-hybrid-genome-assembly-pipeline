@@ -306,7 +306,7 @@ process checkmEvaluate {
     script:
     """
     mkdir input
-    mv $assemblyFasta input/assembly.fna
+    mv $assemblyFa input/assembly.fna
     checkm lineage_wf input ${params.o.checkmEvaluate}
     """
 }
