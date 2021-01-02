@@ -1,0 +1,21 @@
+/home/users/nus/e0325190/miniconda3/envs/urops-assembly/opt/bbmap-38.87-0//calcmem.sh: line 75: [: -v: unary operator expected
+java -ea -Xmx1g -Xms1g -cp /home/users/nus/e0325190/miniconda3/envs/urops-assembly/opt/bbmap-38.87-0/current/ jgi.BBDuk -Xmx1g in1=illumina1.fq.gz in2=illumina2.fq.gz out1=reads/short_cleaned//illumina1.fq out2=reads/short_cleaned//illumina2.fq qtrim=rl trimq=34 minlength=40
+Executing jgi.BBDuk [-Xmx1g, in1=illumina1.fq.gz, in2=illumina2.fq.gz, out1=reads/short_cleaned//illumina1.fq, out2=reads/short_cleaned//illumina2.fq, qtrim=rl, trimq=34, minlength=40]
+Version 38.87
+
+0.157 seconds.
+Initial:
+Memory: max=1073m, total=1073m, free=1044m, used=29m
+
+Input is being processed as paired
+Started output streams:	0.311 seconds.
+Processing time:   		10.781 seconds.
+
+Input:                  	11184832 reads 		1677724800 bases.
+QTrimmed:               	7970605 reads (71.26%) 	540130551 bases (32.19%)
+Total Removed:          	1756438 reads (15.70%) 	540130551 bases (32.19%)
+Result:                 	9428394 reads (84.30%) 	1137594249 bases (67.81%)
+
+Time:                         	11.094 seconds.
+Reads Processed:      11184k 	1008.15k reads/sec
+Bases Processed:       1677m 	151.22m bases/sec

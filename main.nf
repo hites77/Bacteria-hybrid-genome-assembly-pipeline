@@ -54,14 +54,16 @@ process cleanShortReads {
     path '.exitcode'
     path params.o.cleanShortReads + 'illumina1.fq', emit: fq1
     path params.o.cleanShortReads + 'illumina2.fq', emit: fq2
+    path params.o.cleanShortReads + 'trimq_used.txt'
 
     script:
     """
     mkdir -p ${params.o.cleanShortReads}
-    bbduk.sh -Xmx1g \
-            in1=$illumina1Fq in2=$illumina2Fq \
-            out1=${params.o.cleanShortReads}/illumina1.fq out2=${params.o.cleanShortReads}/illumina2.fq \
-            qtrim=rl trimq=34 minlength=40
+    bbduk_keep_percent.py \
+            --in1 $illumina1Fq --in2=$illumina2Fq \
+            --out1 ${params.o.cleanShortReads}/illumina1.fq --out2 ${params.o.cleanShortReads}/illumina2.fq \
+            --infodir ${params.o.cleanShortReads} \
+            --keep_percent 80 --start_trimq 40 --args qtrim=rl minlength=40
     """
 }
 
