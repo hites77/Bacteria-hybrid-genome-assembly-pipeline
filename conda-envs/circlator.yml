@@ -1,0 +1,8 @@
+name: urops-circlator
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - circlator=1.5.5
+  - python>=3.6

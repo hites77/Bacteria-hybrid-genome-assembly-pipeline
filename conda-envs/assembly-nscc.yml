@@ -1,0 +1,22 @@
+name: urops-assembly
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - fastqc=0.11.9
+  - nanoplot=1.32.1
+  - bbmap=38.87
+  - filtlong=0.2.0
+  - flye=2.8.2
+  - minimap2=2.17
+  - racon=1.4.13
+  - pilon=1.23
+  - prokka=1.14.6
+  - fastani=1.32
+  - quast=5.0.2
+  - platon=1.5.0
+  - canu=2.1.1
+  - python>=3.6
+variables:
+  PILONJAR: /home/users/nus/e0325190/miniconda3/pkgs/pilon-1.23-2/share/pilon-1.23-2/pilon-1.23.jar
