@@ -13,6 +13,6 @@ htmlcov
 work/
 .nextflow/
 .nextflow.log.*
-nextflow-report.html
-nextflow-trace.tsv
-nextflow-timeline.html
+nextflow-report*.html*
+nextflow-trace*.tsv*
+nextflow-timeline*.html*
