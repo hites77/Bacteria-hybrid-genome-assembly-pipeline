@@ -104,3 +104,9 @@ def test_main():
         "/home/chloe/Documents/NUS/UROPS/server-data/test-pipeline/assembly/pilon/final_assembly.fasta",
         "test_assembly_diff.tsv",
     )
+
+    main(
+        "/home/chloe/Documents/NUS/UROPS/server-data/test-pipeline/assembly/pilon/final_assembly.fasta",
+        "/home/chloe/Documents/NUS/UROPS/server-data/test-pipeline/assembly/pilon/final_assembly_doubled.fasta",
+        "test_assembly_diff2.tsv",
+    )
