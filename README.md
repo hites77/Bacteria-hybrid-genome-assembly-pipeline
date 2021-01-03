@@ -25,7 +25,46 @@ _Note: Name of Nextflow process is written in parenthesis._
 
 ### Assembly evaluation
 
-TODO
+**Metrics recorded:**
+
+- Coverage of short reads and long reads (`shortReadsCoverage`, `longReadsCoverage`)
+- Annotations using Prokka (`prokkaAnnotate`)
+- Statistics about the assembly itself eg. length, number of contigs, N50 using Quast (`quastEvaluate`)
+- Completeness and contamination using CheckM (`checkmEvaluate`)
+
+**Summary document:**
+
+The most important statistics are also saved to a single summary document, `summary.json` (`makeSummary`):
+
+```
+{
+    "avg short reads coverage": 273.4589,
+    "short reads mapped": {
+        "total reads": 9428394,
+        "mapped reads:": 9424508,
+        "proportion mapped reads": 0.9995878407287604
+    },
+    "avg long reads coverage": 161.3932,
+    "long reads mapped": {
+        "total reads": 86563,
+        "mapped reads:": 86523,
+        "proportion mapped reads": 0.9995379088063029
+    },
+    "length": 4159544,
+    "contigs": 1,
+    "N50": 4159544,
+    "GC": 0.6025,
+    "CDS": 3868,
+    "is circular": {
+        "contig_1": true
+    },
+    "completeness": 1.0,
+    "contamination": 0.0002787844995818232,
+    "errors": []
+}
+```
+
+Note that `errors` refers to any errors encountered while creating the summary document (does not include the errors when running quast/prokka etc.)
 
 ## Setup
 
@@ -69,7 +108,7 @@ mpirun --pernode nextflow run main.nf -profile nscc -with-mpi
 
 **As a local job:**
 
-`nextflow run main.nf -profile nscc` (if running on the NSCC server) or `nextflow run main.nf -profile local` if running locally.
+`nextflow run main.nf -profile nscc` (if running on the NSCC server) or `nextflow run main.nf -profile local` (if running on desktop).
 
 ## Output files
 
@@ -80,13 +119,23 @@ Every process will create a separate folder which contain:
 - `nextflow.command.log`: the scripts's stderr and stdout.
 - `nextflow.exitcode`: the script's exit code.
 
-Once the pipeline has finished running, several reports are also generated inside the directory that nextflow was started from (ie. the current directory when `nextflow run ...` was issued):
+The name and location of the folder for each process is determined by the `params.outdir` and `params.o...` (eg. `params.o.cleanShortReads`) parameters defined at the top of `main.nf`.
+
+Several reports are also generated inside the directory that nextflow was started from (ie. the current directory when `nextflow run ...` was issued):
 - `nextflow-report.html`: a comprehensive summary of the pipeline ([Example](https://www.nextflow.io/docs/latest/tracing.html#execution-report))
 - `nextflow-timeline.html`: a timeline showing the duration of each process. ([Example](https://www.nextflow.io/docs/latest/tracing.html#timeline-report))
 - `nextflow-trace.tsv`: a table of information about each process. ([Example](https://www.nextflow.io/docs/latest/tracing.html#trace-report))
 
 Note: if there are existing reports in the current directory, the existing reports will get renamed to `nextflow-report.html.1`, `nextflow-report.html.2` etc.
 
+**Nextflow's working directory (workDir):**
+
+TODO
+
+Nextflow stores temporary data in a working directory.
+This will basically includes all of the files mentioned above and possibly additional intermediate files.
+This can be safely deleted after the pipeline finishes running.
+See more at: https://www.nextflow.io/docs/latest/script.html?highlight=workdir#implicit-variables
 
 TODO:
 - Work dir, deleting work dir
