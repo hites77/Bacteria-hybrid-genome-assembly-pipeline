@@ -18,5 +18,7 @@ dependencies:
   - platon=1.5.0
   - canu=2.1.1
   - python>=3.6
+  - biopython=1.78
+  - pandas=1.2.0
 variables:
   PILONJAR: /home/users/nus/e0325190/miniconda3/pkgs/pilon-1.23-2/share/pilon-1.23-2/pilon-1.23.jar
