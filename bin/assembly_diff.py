@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 
-"""See the documentation for the main function."""
+"""Checks whether 2 genome assemblies are different.
+
+See the documentation for the main function.
+"""
 
 import re
+import sys
 
 import pandas as pd
 from Bio import SeqIO
@@ -21,8 +25,7 @@ COL_AFTER_CONTIGS = "afterContigs"
 
 
 def sequences_different(assembly_file1, assembly_file2):
-    """
-    Returns whether 2 assemblies are different.
+    """Returns whether 2 assemblies are different.
 
     Precondition: number of contigs are the same, and 1st contigs correspond, 2nd contigs
     correspond etc
@@ -50,9 +53,9 @@ def number_of_contigs(assembly_file):
     return len(matches)
 
 
-def main(original_assembly, new_assembly, log_file):
-    """
-    Analyses the difference between 2 genome assemblies and saves the results to a tsv file.
+def main(assembly1, assembly2):
+    """Analyses the difference between 2 genome assemblies and outputs the results in the tsv
+    format to stdout.
 
     Assumptions:
     - When checking the equality of 2 assemblies with the same number of contigs, it is
@@ -60,24 +63,23 @@ def main(original_assembly, new_assembly, log_file):
     - Sequences are treated as linear.
 
     Args:
-        original_assembly (str): Path to file of original assembly (FASTA format).
-        new_assembly (str): Path to file of new assembly (FASTA format).
-        log_file (str): Path to file to store results. The tsv format is used.
+        assembly1 (str): Path to file of original assembly (FASTA format).
+        assembly2 (str): Path to file of new assembly (FASTA format).
 
     Returns:
         Dataframe of differences between the 2 assemblies. The dataframe has a single row,
         and has the following columns:
         - different: whether the assemblies are different
         - contigsChange: whether the number of contigs differs
-        - beforeContigs: number of contigs in original assembly
-        - afterContigs: number of contigs in new assembly
+        - beforeContigs: number of contigs in assembly 1
+        - afterContigs: number of contigs in assembly 2
     """
-    before_contigs = number_of_contigs(original_assembly)
-    after_contigs = number_of_contigs(new_assembly)
+    before_contigs = number_of_contigs(assembly1)
+    after_contigs = number_of_contigs(assembly2)
     if before_contigs != after_contigs:
         different = YES
         contigs_change = YES
-    elif sequences_different(original_assembly, new_assembly):
+    elif sequences_different(assembly1, assembly2):
         different = YES
         contigs_change = NO
     else:
@@ -93,7 +95,7 @@ def main(original_assembly, new_assembly, log_file):
         }
     )
 
-    df.to_csv(log_file, index=False)
+    df.to_csv(sys.stdout, index=False)
 
     return df
 
@@ -102,11 +104,9 @@ def test_main():
     main(
         "/home/chloe/Documents/NUS/UROPS/server-data/test-pipeline/assembly/pilon/final_assembly.fasta",
         "/home/chloe/Documents/NUS/UROPS/server-data/test-pipeline/assembly/pilon/final_assembly.fasta",
-        "test_assembly_diff.tsv",
     )
 
     main(
         "/home/chloe/Documents/NUS/UROPS/server-data/test-pipeline/assembly/pilon/final_assembly.fasta",
         "/home/chloe/Documents/NUS/UROPS/server-data/test-pipeline/assembly/pilon/final_assembly_doubled.fasta",
-        "test_assembly_diff2.tsv",
     )

@@ -14,10 +14,6 @@ params.bbduk_start_trimq = 40
 
 // TODO validate params
 
-// results directory (Nextflow's publishDir)
-// must be an absolute path 
-params.outdir = '/home/chloe/asembly-pipeline/results/'
-
 // output directories for each process relative to params.outdir
 params.o = {}
 params.o.cleanShortReads = 'reads/short_cleaned/'
@@ -129,7 +125,7 @@ process flyeAssembly {
 }
 
 process raconPolish {
-    publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.raconPolish)
+    publishDir params.outdir + params.o.raconPolish, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.raconPolish)
     conda params.condaEnvsDir + 'urops-assembly'
 
     input:
@@ -140,15 +136,12 @@ process raconPolish {
     path '.command.sh'
     path '.command.log'
     path '.exitcode'
-    path params.o.raconPolish + 'assembly.fasta', emit: assemblyFa
+    path 'final_racon_assembly.fa', emit: assemblyFa
+    path 'final_racon_log.tsv', emit: logFile
 
     script:
     """
-    mkdir -p ${params.o.raconPolish}
-    minimap2 -t ${params.threads} -ax map-pb $assemblyFa $pacbioFq > assembly_pacbio_alignment.sam
-    racon -m 8 -x -6 -g -8 -w 500 -t ${params.threads} \
-        $pacbioFq assembly_pacbio_alignment.sam $assemblyFa \
-        > ${params.o.raconPolish}/assembly.fasta
+    run_racon.py --in_assembly $assemblyFa --in_pacbio $pacbioFq --out_prefix final_racon --threads $params.threads --maxiters 4 --args "-m 8 -x -6 -g -8 -w 500"
     """
 }
 
