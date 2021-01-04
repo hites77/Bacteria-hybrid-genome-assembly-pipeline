@@ -114,9 +114,7 @@ def make_flag(name):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument(
-    make_flag(PARSER_ASSEMBLY), nargs=1, required=True, help="Path to assembly"
-)
+parser.add_argument(make_flag(PARSER_ASSEMBLY), nargs=1, required=True, help="Path to assembly")
 parser.add_argument(
     make_flag(PARSER_READS_1),
     nargs=1,

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
 
 
 def quast_stats_internal(transposed_report_tsv_df):

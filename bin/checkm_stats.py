@@ -13,9 +13,7 @@ def checkm_stats_internal(bin_stats_ext_text):
         A dictionary containing the completeness (key: completeness) and
         contamination (key: contamination), both over 1.
     """
-    json_text = bin_stats_ext_text[bin_stats_ext_text.find("\t") + 1 :].replace(
-        "'", '"'
-    )
+    json_text = bin_stats_ext_text[bin_stats_ext_text.find("\t") + 1 :].replace("'", '"')
     checkm_dict = json.loads(json_text)
     return {
         "completeness": float(checkm_dict["Completeness"] / 100),

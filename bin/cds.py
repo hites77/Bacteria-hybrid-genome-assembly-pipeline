@@ -44,9 +44,7 @@ def line_value(line):
     """
     split = line.split()
     if len(split) < 2:
-        raise ValueError(
-            f'"{line}" is an invalid line: number of splits < 2\nSplits: {split}'
-        )
+        raise ValueError(f'"{line}" is an invalid line: number of splits < 2\nSplits: {split}')
     return split[-1]
 
 

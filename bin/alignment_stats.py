@@ -48,9 +48,7 @@ def line_value(line):
     """
     split = line.split()
     if len(split) < 2:
-        raise ValueError(
-            f'"{line}" is an invalid line: number of splits < 2\nSplits: {split}'
-        )
+        raise ValueError(f'"{line}" is an invalid line: number of splits < 2\nSplits: {split}')
     return split[-1]
 
 
@@ -90,9 +88,7 @@ def average_coverage_internal(stats_txt_df):
         ValueError: The dataframe does not have exactly 1 row.
     """
     if len(stats_txt_df) != 1:
-        raise ValueError(
-            f"Dataframe should have 1 row.\nNumber of rows: {len(stats_txt_df)}"
-        )
+        raise ValueError(f"Dataframe should have 1 row.\nNumber of rows: {len(stats_txt_df)}")
     return float(stats_txt_df["Avg_fold"][0])
 
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from pathlib import Path
+
 import pandas as pd
 
 col_circularised = "circularised"
@@ -16,9 +17,7 @@ def get_merge_circularise_log_df(merge_circ_log_path):
     # validate circularised column
     valid_circularised_values = (0, 1)
     if any(val not in valid_circularised_values for val in df[col_circularised]):
-        raise ValueError(
-            f"{merge_circ_log_path} is an invalid merging circularise.log file"
-        )
+        raise ValueError(f"{merge_circ_log_path} is an invalid merging circularise.log file")
 
     df[col_circularised] = df[col_circularised].apply(bool)
 

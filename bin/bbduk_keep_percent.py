@@ -21,9 +21,7 @@ MIN_PHRED_SCORE = 1
 
 class CannotKeepPercentError(Exception):
     def __init__(self, keep_percent, other_message=""):
-        super().__init__(
-            f"Cannot keep at least {keep_percent}% of reads.{other_message}"
-        )
+        super().__init__(f"Cannot keep at least {keep_percent}% of reads.{other_message}")
 
 
 RE_GROUP_PERCENT_READS = "percentKept"
@@ -56,9 +54,7 @@ def run_bbduk(in1, in2, out1, out2, log_file, trimq, args=""):
     )
 
 
-def main(
-    in1, in2, out1, out2, keep_percent, start_trimq, min_trimq, bbduk_args, info_dir
-):
+def main(in1, in2, out1, out2, keep_percent, start_trimq, min_trimq, bbduk_args, info_dir):
     if start_trimq < min_trimq:
         raise ValueError("start_trimq should be >= min_trimq")
 
