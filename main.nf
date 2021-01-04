@@ -389,35 +389,3 @@ workflow full {
 workflow {
     full()
 }
-
-// workflow quickTest {
-//     // without canu
-    
-//     rawIllumina1Fq = '/home/chloe/Documents/NUS/UROPS/server-data/S8E_3_1/reads/raw/illumina1.fq.gz'
-//     rawIllumina2Fq = '/home/chloe/Documents/NUS/UROPS/server-data/S8E_3_1/reads/raw/illumina2.fq.gz'
-//     rawPacbioFq = '/home/chloe/Documents/NUS/UROPS/server-data/S8E_3_1/reads/raw/pacbio.fq.gz'
-    
-//     cleanShortReads(rawIllumina1Fq, rawIllumina2Fq)
-
-//     cleanedShort1 = cleanShortReads.out.fq1
-//     cleanedShort2 = cleanShortReads.out.fq2
-
-//     cleanLongReads(rawPacbioFq, cleanedShort1, cleanedShort2)
-
-//     cleanedLong = cleanLongReads.out.fq
-
-//     flyeAssembly(cleanedLong)
-//     raconPolish(flyeAssembly.out.assemblyFa, cleanedLong)
-//     circularise(raconPolish.out.assemblyFa, cleanedLong)
-//     pilonPolish(circularise.out.assemblyFa, cleanedShort1, cleanedShort2)
-
-//     finalAssembly = pilonPolish.out.assemblyFa
-
-//     shortReadsCoverage(finalAssembly, cleanedShort1, cleanedShort2)
-//     longReadsCoverage(finalAssembly, cleanedLong)
-//     prokkaAnnotate(finalAssembly)
-//     quastEvaluate(finalAssembly, prokkaAnnotate.out.gff)
-//     checkmEvaluate(finalAssembly)
-
-//     makeSummary(shortReadsCoverage.out[0], longReadsCoverage.out[0], quastEvaluate.out[0], prokkaAnnotate.out[0], circularise.out[0], checkmEvaluate.out[0])
-// }
