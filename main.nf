@@ -6,6 +6,8 @@ nextflow.enable.dsl=2
 
 // maximum number of iterations to run pilon for
 params.pilonMaxIters = 6
+// maximum number of iterations to run racon for
+params.raconMaxIters = 4
 
 // args for bin/bbduk_keep_percent.py
 params.bbduk_keep_percent = 80
@@ -141,7 +143,7 @@ process raconPolish {
 
     script:
     """
-    run_racon.py --in_assembly $assemblyFa --in_pacbio $pacbioFq --out_prefix final_racon --threads $params.threads --maxiters 4 --args "-m 8 -x -6 -g -8 -w 500"
+    run_racon.py --in_assembly $assemblyFa --in_pacbio $pacbioFq --out_prefix final_racon --threads $params.threads --maxiters $params.raconMaxIters --args "-m 8 -x -6 -g -8 -w 500"
     """
 }
 
