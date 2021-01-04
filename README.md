@@ -72,7 +72,18 @@ Note that `errors` refers to any errors encountered while creating the summary d
 
 1. Create the conda environments from yaml files in the `conda-envs` directory
    - Use only one of `assembly.yml` and `assembly-nscc.yml`. The difference is that `assembly.yml` includes samtools and bwa while `assembly-nscc.yml` does not.
-   - For `assembly.yml`/`assembly-nscc.yml`, change the PILONJAR variable according. It is meant to be the path to Pilon's jar file. It is usually at `<path to conda directory>/pkgs/pilon-1.23-2/share/pilon-1.23-2/pilon-1.23.jar`.
+   - Before creating `assembly.yml`/`assembly-nscc.yml`, change the following variables:
+        - Set `PILONJAR` to the path to the Pilon's jar file. It is usually at `<path to conda directory>/pkgs/pilon-1.23-2/share/pilon-1.23-2/pilon-1.23.jar`.
+        - Set `PLATONDB` to the path to Platon's database, which will be donwloaded in the next step.
+1. Download databases needed by various tools
+   - Platon: download the database at this [link](https://zenodo.org/record/4066768/files/db.tar.gz?download=1) and extract it to `PLATONDB`
+   - Checkm: 
+       1. Download and unzip the database at this [link](https://data.ace.uq.edu.au/public/CheckM_databases/)
+       1. Tell Checkm where the database is:
+          ```sh
+          conda activate urops-checkm
+          checkm data setRoot <path_to_platon_database>
+          ```
 1. Install [Nextflow](https://www.nextflow.io). It has been tested using v20.10 so far (latest stable release as of time of writing).
 
 ## Running the pipeline
