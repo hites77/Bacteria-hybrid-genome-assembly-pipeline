@@ -19,9 +19,11 @@ _Note: Name of Nextflow process is written in parenthesis._
 1. Clean long reads using Filtlong (`cleanLongReads`)
 1. Form an initial assembly using the long reads with Flye (`flyeAssembly`)
 1. Polish the assembly using the long reads with Racon (`raconPolish`)
+   - Racon is run up to 4 times or until there are no changes.
 1. Circularise the assembly using Circlator (`circularise`)
    - In addition to the assembly, Circlator takes in the long reads as input. We use long reads corrected using Canu as input (`canuCorrect`).
 1. Polish the assembly using Pilon (`pilonPolish`)
+   - Pilon is run up to 6 times or until there are no changes.
 
 ### Assembly evaluation
 
@@ -140,3 +142,15 @@ See more at: https://www.nextflow.io/docs/latest/script.html?highlight=workdir#i
 TODO:
 - Work dir, deleting work dir
 - Debugging using report, `-resume`
+
+## Understanding the effect of each assembly step
+
+To understand the changes each step makes on the genome assembly, look at the following files in the process' output directory:
+
+- **Racon:** 
+    - `final_assembly_log.tsv` gives the difference between assembly before and after running racon, as well as the number of times that racon was run.
+- **Circlator:**
+    - The `.log` files: describes what circlator did in each step. See the [Circlator wiki](https://github.com/sanger-pathogens/circlator/wiki) for documentation on the contents of the log file for each task.
+- **Pilon:**
+    - The number of iterations of pilon can be inferred from the numbering of the pilon files.
+    - The exact changes made in each iteration of pilon is given in `pilonX.changes`. See the [Pilon wiki](https://github.com/broadinstitute/pilon/wiki/Output-File-Descriptions#changes) for the format.
