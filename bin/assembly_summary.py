@@ -9,8 +9,20 @@ from pathlib import Path
 from alignment_stats import average_coverage, reads_mapped
 from cds import cds
 from checkm_stats import checkm_stats
-from circlator_genome_topology import is_circular
+import circlator_genome_topology
+import platon_stats
 from quast_stats import quast_stats
+
+### CONSTANTS ###
+
+KEY_AVERAGE_SHORT_READS_COVERAGE = "avg short reads coverage"
+KEY_AVERAGE_LONG_READS_COVERAGE = "avg long reads coverage"
+KEY_SHORT_READS_MAPPED = "short reads mapped"
+KEY_LONG_READS_MAPPED = "long reads mapped"
+KEY_CDS = "CDS"
+KEY_CIRCULARITY = "circularity"
+
+### FUNCTIONS ###
 
 
 def make_assigner(results_dict, error_list):
@@ -32,11 +44,11 @@ def make_assigner(results_dict, error_list):
     return try_assign
 
 
-def make_summary(
+def make_chromosome_summary(
     short_reads_coverage_dir,
     long_reads_coverage_dir,
     quast_dir,
-    prokka_dir,
+    prokka_txt,
     circlator_dir,
     checkm_dir,
 ):
@@ -57,28 +69,70 @@ def make_summary(
 
     short_reads_coverage_dir = Path(short_reads_coverage_dir)
     long_reads_coverage_dir = Path(long_reads_coverage_dir)
-    prokka_dir = Path(prokka_dir)
 
     assign_to_dict(
-        "avg short reads coverage",
+        KEY_AVERAGE_SHORT_READS_COVERAGE,
         lambda: average_coverage(short_reads_coverage_dir / "stats.txt"),
     )
     assign_to_dict(
-        "short reads mapped",
+        KEY_SHORT_READS_MAPPED,
         lambda: reads_mapped(short_reads_coverage_dir / "bbmap_stderr.txt"),
     )
     assign_to_dict(
-        "avg long reads coverage",
+        KEY_AVERAGE_LONG_READS_COVERAGE,
         lambda: average_coverage(long_reads_coverage_dir / "stats.txt"),
     )
     assign_to_dict(
-        "long reads mapped",
+        KEY_LONG_READS_MAPPED,
         lambda: reads_mapped(long_reads_coverage_dir / "pileup_stderr.txt"),
     )
     assign_to_dict("quast", lambda: quast_stats(quast_dir), update=True)
-    assign_to_dict("CDS", lambda: cds(prokka_dir / "prokka.txt"))
-    assign_to_dict("is circular", lambda: is_circular(circlator_dir))
+    assign_to_dict(KEY_CDS, lambda: cds(prokka_txt))
+    assign_to_dict(KEY_CIRCULARITY, lambda: circlator_genome_topology.circularity(circlator_dir))
     assign_to_dict("checkm", lambda: checkm_stats(checkm_dir), update=True)
+
+    results["errors"] = error_list
+
+    if error_list:
+        print("Errors:\n", error_list, file=sys.stderr)
+
+    return results
+
+
+def make_plasmid_summary(
+    short_reads_coverage_dir,
+    long_reads_coverage_dir,
+    quast_dir,
+    prokka_txt,
+    platon_tsv,
+):
+    results = {}
+    error_list = []
+
+    assign_to_dict = make_assigner(results, error_list)
+
+    short_reads_coverage_dir = Path(short_reads_coverage_dir)
+    long_reads_coverage_dir = Path(long_reads_coverage_dir)
+
+    assign_to_dict(
+        KEY_AVERAGE_SHORT_READS_COVERAGE,
+        lambda: average_coverage(short_reads_coverage_dir / "stats.txt"),
+    )
+    assign_to_dict(
+        KEY_SHORT_READS_MAPPED,
+        lambda: reads_mapped(short_reads_coverage_dir / "bbmap_stderr.txt"),
+    )
+    assign_to_dict(
+        KEY_AVERAGE_LONG_READS_COVERAGE,
+        lambda: average_coverage(long_reads_coverage_dir / "stats.txt"),
+    )
+    assign_to_dict(
+        KEY_LONG_READS_MAPPED,
+        lambda: reads_mapped(long_reads_coverage_dir / "pileup_stderr.txt"),
+    )
+    assign_to_dict("quast", lambda: quast_stats(quast_dir), update=True)
+    assign_to_dict(KEY_CDS, lambda: cds(prokka_txt))
+    assign_to_dict(KEY_CIRCULARITY, lambda: platon_stats.cicularity(platon_tsv))
 
     results["errors"] = error_list
 
@@ -107,7 +161,7 @@ def make_summary_and_save(
         The other args are the output directories for various parts of
         the assembly / evaluation pipeline.
     """
-    summary = make_summary(
+    summary = make_chromosome_summary(
         short_reads_coverage_dir,
         long_reads_coverage_dir,
         quast_dir,
@@ -122,11 +176,11 @@ def make_summary_and_save(
 # TODO: named inputs
 if __name__ == "__main__":
     make_summary_and_save(
-        sys.argv[1],
-        sys.argv[2],
-        sys.argv[3],
-        sys.argv[4],
-        sys.argv[5],
-        sys.argv[6],
-        sys.argv[7],
+        save_to=sys.argv[1],
+        short_reads_coverage_dir=sys.argv[2],
+        long_reads_coverage_dir=sys.argv[3],
+        quast_dir=sys.argv[4],
+        prokka_dir=sys.argv[5],
+        circlator_dir=sys.argv[6],
+        checkm_dir=sys.argv[7],
     )

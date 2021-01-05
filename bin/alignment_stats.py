@@ -60,8 +60,9 @@ def reads_mapped_internal(stderr_lines):
           by \n. This can obtained by using the readlines() method.
 
     Returns:
-        A dictionary containing the total number of reads (key: total reads)
-        and number of mapped reads (key: mapped reads).
+        A dictionary containing the total number of reads (key: total reads),
+        number of mapped reads (key: mapped reads), and proportion of mapped reads
+        (key: proportion mapped).
     """
 
     def get_int(starts_with_text):
@@ -72,7 +73,7 @@ def reads_mapped_internal(stderr_lines):
     return {
         "total reads": total_reads,
         "mapped reads:": reads_mapped,
-        "proportion mapped reads": reads_mapped / total_reads,
+        "proportion mapped": reads_mapped / total_reads,
     }
 
 

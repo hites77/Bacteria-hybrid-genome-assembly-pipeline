@@ -1,25 +1,29 @@
 #!/usr/bin/env python3
 
+from platon_stats import circularity
 from pathlib import Path
 
 import pandas as pd
 
 col_circularised = "circularised"
 col_pandas_index = "Index"
+col_contig_name = "#Contig"
 
 
 def get_merge_circularise_log_df(merge_circ_log_path):
     df = pd.read_table(merge_circ_log_path)
 
-    col_contig_name = "#Contig"
     df = df.set_index(col_contig_name)
 
-    # validate circularised column
-    valid_circularised_values = (0, 1)
-    if any(val not in valid_circularised_values for val in df[col_circularised]):
-        raise ValueError(f"{merge_circ_log_path} is an invalid merging circularise.log file")
+    def map_circularised_values(text):
+        if text == 1:
+            return "circular"
+        elif text == 0:
+            return "linear"
+        else:
+            raise ValueError(f"Unrecognised circularity type: {text}")
 
-    df[col_circularised] = df[col_circularised].apply(bool)
+    df[col_circularised] = df[col_circularised].apply(map_circularised_values)
 
     return df
 
@@ -32,11 +36,8 @@ def is_circular_internal(df, contigs=None):
           argument is passed, use all contigs.
 
     Returns:
-        A dictionary mapping the contig name to whether it is circular.
-        Eg. { 'contig_1' : True }
-
-    Raises:
-        ValueError: contigs argument is neither None nor a list.
+        A dictionary mapping the contig name to its circularity
+        Eg. { 'contig_1' : 'circular' }
     """
 
     if contigs != None and not isinstance(contigs, list):
@@ -54,7 +55,7 @@ def is_circular_internal(df, contigs=None):
     return result_dict
 
 
-def is_circular(circlator_output_dir, contigs=None):
+def circularity(circlator_output_dir_or_log_file, contigs=None):
     """
     Args:
         circlator_output_dir: Path to circlator's output directory.
@@ -62,11 +63,15 @@ def is_circular(circlator_output_dir, contigs=None):
           argument is passed, use all contigs.
 
     Returns:
-        A dictionary mapping the contig name to whether it is circular.
-        Eg. { 'contig_1' : True }
+        A dictionary mapping the contig name to its circularity
+        Eg. { 'contig_1' : 'circular' }
     """
-    merge_circ_log_file = Path(circlator_output_dir) / "04.merge.circularise.log"
-    return is_circular_internal(get_merge_circularise_log_df(merge_circ_log_file))
+    merge_circ_log_file = (
+        circlator_output_dir_or_log_file
+        if str(circlator_output_dir_or_log_file).endswith(".log")
+        else Path(circlator_output_dir_or_log_file) / "04.merge.circularise.log"
+    )
+    return is_circular_internal(get_merge_circularise_log_df(merge_circ_log_file), contigs)
 
 
 # print(

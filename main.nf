@@ -13,6 +13,7 @@ params.raconMaxIters = 4
 params.bbduk_keep_percent = 80
 params.bbduk_start_trimq = 40
 
+params.enablePublish = false
 
 // TODO validate params
 
@@ -25,6 +26,7 @@ params.o.raconPolish = 'assembly/racon/'
 params.o.canuCorrect = 'reads/long_canu/'
 params.o.circularise = 'assembly/circlator/'
 params.o.pilonPolish = 'assembly/pilon/'
+params.o.separateChromosomesAndPlasmids = 'assembly/separate/'
 params.o.shortReadsCoverage = 'assembly_eval/short_read_coverage/'
 params.o.longReadsCoverage = 'assembly_eval/long_read_coverage/'
 params.o.prokkaAnnotate = 'assembly_eval/prokka/'
@@ -52,6 +54,47 @@ def makeNextflowLogClosure(o_pubdir) {
             return it
         }
     }
+}
+
+/**
+ * Get longest common directory of a list of files.
+ */
+def getDirectory(fileList) {
+    // make paths absolute
+    for (int i=0; i < fileList.size(); i++) {
+        fileList[i] = fileList[i].toAbsolutePath()
+    }
+
+    // try to find longest common directory
+    def directory = fileList[0].isDirectory() ? fileList[0] : file(fileList[0].parent)
+    boolean continueFlag = false
+    while (true) {
+        continueFlag = false
+        for (int i=0; i < fileList.size(); i++) {
+            if (fileList[i] != directory) {
+                continueFlag = true
+                if (fileList[i].toString().length() >= directory.toString().length()) {
+                    fileList[i] = file(fileList[i].parent)
+                }
+
+                if (fileList[i].toString().length() < directory.toString().length()) {
+                    directory = fileList[i]
+                }
+            }
+        }
+        if (!continueFlag) {
+            break
+        }
+    }
+
+    return directory
+}
+
+/**
+ * Transforms a channel of lists of files to a channel of directories by applying getDirectory to each list.
+ */
+def mapToDirectory(fileListChan) {
+    return fileListChan.map { getDirectory(it) }
 }
 
 process cleanShortReads {
@@ -214,8 +257,37 @@ process pilonPolish {
     """
 }
 
+process separateChromosomesAndPlasmids {
+    publishDir params.outdir + params.o.separateChromosomesAndPlasmids, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.separateChromosomesAndPlasmids)
+    conda params.condaEnvsDir + 'urops-assembly'
+    
+    input:
+    path assemblyFa
+    path flyeDir
+    
+    output:
+    path '.command.sh'
+    path '.command.log'
+    path '.exitcode'
+    path 'assembly.chromosome.fasta', emit: chromosomeFa
+    path 'assembly.plasmid.fasta' optional true, emit: plasmidFa
+    path 'assembly.tsv' optional true, emit: platonTsv
+    path 'assembly.json' optional true, emit: platonJson
+
+    script:
+    """
+    if [ -s $flyeDir/22-plasmids/plasmids_raw.fasta ] ; then
+        echo plasmids present
+        platon -p assembly -t $params.threads $assemblyFa -d \$PLATONDB
+    else
+        echo plasmids absent
+        ln -s $assemblyFa assembly.chromosome.fasta
+    fi
+    """
+}
+
 process shortReadsCoverage {
-    publishDir params.outdir + params.o.shortReadsCoverage, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.shortReadsCoverage)
+    publishDir params.outdir + params.o.shortReadsCoverage, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.shortReadsCoverage), enabled: params.enablePublish
     conda params.condaEnvsDir + 'urops-assembly'
     
     input:
@@ -227,9 +299,9 @@ process shortReadsCoverage {
     path '.command.sh'
     path '.command.log'
     path '.exitcode'
-    path 'stats.txt'
-    path 'histogram.txt'
-    path 'bbmap_stderr.txt'
+    path 'stats.txt', emit: stats
+    path 'histogram.txt', emit: histogram
+    path 'bbmap_stderr.txt', emit: stderr
 
     script:
     """
@@ -240,7 +312,7 @@ process shortReadsCoverage {
 }
 
 process longReadsCoverage {
-    publishDir params.outdir + params.o.longReadsCoverage, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.longReadsCoverage)
+    publishDir params.outdir + params.o.longReadsCoverage, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.longReadsCoverage), enabled: params.enablePublish
     conda params.condaEnvsDir + 'urops-assembly'
     
     input:
@@ -251,9 +323,9 @@ process longReadsCoverage {
     path '.command.sh'
     path '.command.log'
     path '.exitcode'
-    path 'stats.txt'
-    path 'histogram.txt'
-    path 'pileup_stderr.txt'
+    path 'stats.txt', emit: stats
+    path 'histogram.txt', emit: histogram
+    path 'pileup_stderr.txt', emit: stderr
     
 
     script:
@@ -264,7 +336,7 @@ process longReadsCoverage {
 }
 
 process prokkaAnnotate {
-    publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.prokkaAnnotate)
+    publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.prokkaAnnotate), enabled: params.enablePublish
     conda params.condaEnvsDir + 'urops-assembly'
 
     input:
@@ -275,6 +347,7 @@ process prokkaAnnotate {
     path '.command.log'
     path '.exitcode'
     path params.o.prokkaAnnotate + 'prokka.gff', emit: gff
+    path params.o.prokkaAnnotate + 'prokka.txt', emit: txt
     path params.o.prokkaAnnotate + '*', emit: allFiles
 
     script:
@@ -284,7 +357,7 @@ process prokkaAnnotate {
 }
 
 process quastEvaluate {
-    publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.quastEvaluate)
+    publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.quastEvaluate), enabled: params.enablePublish
     conda params.condaEnvsDir + 'urops-assembly'
     
     input:
@@ -295,7 +368,7 @@ process quastEvaluate {
     path '.command.sh'
     path '.command.log'
     path '.exitcode'
-    path params.o.quastEvaluate + '*'
+    path params.o.quastEvaluate + '*', emit: allFiles
     
     script:
     """
@@ -304,7 +377,7 @@ process quastEvaluate {
 }
 
 process checkmEvaluate {
-    publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.checkmEvaluate)
+    publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.checkmEvaluate), enabled: params.enablePublish
     conda params.condaEnvsDir + 'urops-checkm'
     
     input:
@@ -314,7 +387,7 @@ process checkmEvaluate {
     path '.command.sh'
     path '.command.log'
     path '.exitcode'
-    path params.o.checkmEvaluate + '*'
+    path params.o.checkmEvaluate + '*', emit: allFiles
 
     script:
     """
@@ -324,42 +397,81 @@ process checkmEvaluate {
     """
 }
 
-process makeSummary {
-    publishDir params.outdir + params.o.makeSummary, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.makeSummary)
+process makeChromosomeSummary {
+    // publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure()
+    publishDir params.outdir, mode: 'copy'
     conda params.condaEnvsDir + 'urops-assembly'
-
-    // just use process.out for these
+    
     input:
-    val shortReadsDone
-    val longReadsDone
-    val quastDone
-    val prokkaDone
-    val circlatorDone
-    val checkmDone
-
+    path shortReadsCoverageDir
+    path longReadsCoverageDir
+    path quastDir
+    path prokkaTxt
+    path circlatorDir
+    path checkmDir
+    
     output:
-    path '.command.sh'
-    path '.command.log'
-    path '.exitcode'
-    path 'summary.json'
+    // path '.command.sh'
+    // path '.command.log'
+    // path '.exitcode'
+    path 'chromosome-summary.json'
 
     script:
     """
-    assembly_summary.py summary.json \
-        ${params.outdir + params.o.shortReadsCoverage} \
-        ${params.outdir + params.o.longReadsCoverage} \
-        ${params.outdir + params.o.quastEvaluate} \
-        ${params.outdir + params.o.prokkaAnnotate} \
-        ${params.outdir + params.o.circularise} \
-        ${params.outdir + params.o.checkmEvaluate}
+    chromosome_summary.py --short $shortReadsCoverageDir \
+        --long $longReadsCoverageDir \
+        --quast $quastDir \
+        --prokka $prokkaTxt \
+        --circlator $circlatorDir \
+        --checkm $checkmDir \
+        --out chromosome-summary.json
     """
 }
 
-workflow full {
-    rawIllumina1Fq = params.rawIllumina1
-    rawIllumina2Fq = params.rawIllumina2
-    rawPacbioFq = params.rawPacbio
+process makePlasmidSummary {
+    // publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure()
+    publishDir params.outdir, mode: 'copy'
+    conda params.condaEnvsDir + 'urops-assembly'
     
+    input:
+    path shortReadsCoverageDir
+    path longReadsCoverageDir
+    path quastDir
+    path prokkaTxt
+    path platonDir
+    
+    output:
+    // path '.command.sh'
+    // path '.command.log'
+    // path '.exitcode'
+    path 'plasmid-summary.json'
+
+    script:
+    """
+    plasmid_summary.py --short $shortReadsCoverageDir \
+        --long $longReadsCoverageDir \
+        --quast $quastDir \
+        --prokka $prokkaTxt \
+        --platon $platonDir
+    """
+}
+
+workflow assembleGenome {
+    take:
+    rawIllumina1Fq
+    rawIllumina2Fq
+    rawPacbioFq
+
+    emit:
+    chromosomeFa = separateChromosomesAndPlasmids.out.chromosomeFa
+    plasmidFa = separateChromosomesAndPlasmids.out.plasmidFa
+    cleanedShortReads1 = cleanedShort1
+    cleanedShortReads2 = cleanedShort2
+    cleanedLongReads = cleanedLong
+    circlatorDir = mapToDirectory(circularise.out.allFiles)
+    platonTsv = separateChromosomesAndPlasmids.out.platonTsv
+    
+    main:
     cleanShortReads(rawIllumina1Fq, rawIllumina2Fq)
 
     cleanedShort1 = cleanShortReads.out.fq1
@@ -374,16 +486,75 @@ workflow full {
     canuCorrect(cleanedLong)
     circularise(raconPolish.out.assemblyFa, canuCorrect.out.pacbioFa)
     pilonPolish(circularise.out.assemblyFa, cleanedShort1, cleanedShort2)
+    separateChromosomesAndPlasmids(pilonPolish.out.assemblyFa, mapToDirectory(flye.out.allFiles))
+}
 
-    finalAssembly = pilonPolish.out.assemblyFa
+workflow evaluateChromosome {
+    take:
+    assembly
+    cleanedShortReads1
+    cleanedShortReads2
+    cleanedLongReads
+    circlatorDir
 
-    shortReadsCoverage(finalAssembly, cleanedShort1, cleanedShort2)
-    longReadsCoverage(finalAssembly, cleanedLong)
-    prokkaAnnotate(finalAssembly)
-    quastEvaluate(finalAssembly, prokkaAnnotate.out.gff)
-    checkmEvaluate(finalAssembly)
+    main:
+    shortReadsCoverage(assembly, cleanedShortReads1, cleanedShortReads2)
+    longReadsCoverage(assembly, cleanedLongReads)
+    prokkaAnnotate(assembly)
+    quastEvaluate(assembly, prokkaAnnotate.out.gff)
+    checkmEvaluate(assembly)
+    makeChromosomeSummary(
+        shortReadsCoverage.out.stats.map { file(it.parent) }, // HACK
+        longReadsCoverage.out.stats.map { file(it.parent) }, // HACK
+        mapToDirectory(quastEvaluate.out.allFiles),
+        prokkaAnnotate.out.txt,
+        circlatorDir,
+        mapToDirectory(checkmEvaluate.out.allFiles)
+    )
+}
 
-    makeSummary(shortReadsCoverage.out[0], longReadsCoverage.out[0], quastEvaluate.out[0], prokkaAnnotate.out[0], circularise.out[0], checkmEvaluate.out[0])
+workflow evaluatePlasmid {
+    take:
+    assembly
+    cleanedShortReads1
+    cleanedShortReads2
+    cleanedLongReads
+    platonTsv
+
+    main:
+    shortReadsCoverage(assembly, cleanedShortReads1, cleanedShortReads2)
+    longReadsCoverage(assembly, cleanedLongReads)
+    prokkaAnnotate(assembly)
+    quastEvaluate(assembly, prokkaAnnotate.out.gff)
+    makePlasmidSummary(
+        shortReadsCoverage.out.stats.map { file(it.parent) }, // HACK
+        longReadsCoverage.out.stats.map { file(it.parent) }, // HACK
+        mapToDirectory(quastEvaluate.out.allFiles),
+        prokkaAnnotate.out.txt,
+        platonTsv
+    )
+}
+
+workflow full {
+    rawIllumina1Fq = params.rawIllumina1
+    rawIllumina2Fq = params.rawIllumina2
+    rawPacbioFq = params.rawPacbio
+
+    assembleGenome(rawIllumina1F1, rawIllumina2Fq, rawPacbioFq)
+    evaluateChromosome(
+        assembleGenome.out.chromosomeFa,
+        assembleGenome.out.cleanedShortReads1,
+        assembleGenome.out.cleanedShortReads2,
+        assembleGenome.out.cleanedLongReads,
+        assembleGenome.out.circlatorDir
+    )
+    evaluatePlasmid(
+        assembleGenome.out.plasmidFa,
+        assembleGenome.out.cleanedShortReads1,
+        assembleGenome.out.cleanedShortReads2,
+        assembleGenome.out.cleanedLongReads,
+        assembleGenome.out.platonTsv
+    )
 }
 
 workflow {
