@@ -1,6 +1,6 @@
 nextflow.enable.dsl=2
 
-// include { makeNextflowLogClosure; getDirectory; mapToDirectory } from './modules/commons.nf'
+include { getDirectory; mapToDirectory } from './modules/commons.nf'
 
 /// PARAMS START HERE ///
 
@@ -45,66 +45,9 @@ outdirs.checkmEvaluate = 'checkm/'
 // TODO validate: all dirs end with a slash, no spaces
 // TODO Extract out env names?
 
-/**
- * Returns a closure to be used with publishDir's saveAs parameter which ensures
- * .command.sh, .command.log and .command.sh are be published to params.oudir + params.o_pubdir.
- *
- * @param o_pubdir: params.o.processName eg. process.o.cleanShortReads
- *
- */
-def makeNextflowLogClosure(o_pubdir) {
-    return { // it = file name
-        if (it == '.exitcode' || it == '.command.log' || it == '.command.sh' ) {
-            return params.outdir + o_pubdir + 'nextflow' + it
-        } else {
-            return it
-        }
-    }
-}
-
-/**
- * Get longest common directory of a list of files.
- */
-def getDirectory(fileList) {
-    // make paths absolute
-    for (int i=0; i < fileList.size(); i++) {
-        fileList[i] = fileList[i].toAbsolutePath()
-    }
-
-    // try to find longest common directory
-    def directory = fileList[0].isDirectory() ? fileList[0] : file(fileList[0].parent)
-    boolean continueFlag = false
-    while (true) {
-        continueFlag = false
-        for (int i=0; i < fileList.size(); i++) {
-            if (fileList[i] != directory) {
-                continueFlag = true
-                if (fileList[i].toString().length() >= directory.toString().length()) {
-                    fileList[i] = file(fileList[i].parent)
-                }
-
-                if (fileList[i].toString().length() < directory.toString().length()) {
-                    directory = fileList[i]
-                }
-            }
-        }
-        if (!continueFlag) {
-            break
-        }
-    }
-
-    return directory
-}
-
-/**
- * Transforms a channel of lists of files to a channel of directories by applying getDirectory to each list.
- */
-def mapToDirectory(fileListChan) {
-    return fileListChan.map { getDirectory(it) }
-}
-
 process cleanShortReads {
-    publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(outdirs.cleanShortReads)
+    publishDir params.outdir + outdirs.cleanShortReads, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
+    publishDir params.outdir, mode: 'copy'
     conda params.condaEnvsDir + 'urops-assembly'
 
     input:
@@ -131,7 +74,8 @@ process cleanShortReads {
 }
 
 process cleanLongReads {
-    publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(outdirs.cleanLongReads)
+    publishDir params.outdir + outdirs.cleanLongReads, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
+    publishDir params.outdir, mode: 'copy'
     conda params.condaEnvsDir + 'urops-assembly'
 
     input:
@@ -155,7 +99,8 @@ process cleanLongReads {
 }
 
 process flyeAssembly {
-    publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(outdirs.flyeAssembly)
+    publishDir params.outdir + outdirs.flyeAssembly, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
+    publishDir params.outdir, mode: 'copy'
     conda params.condaEnvsDir + 'urops-assembly'
 
     input:
@@ -178,7 +123,8 @@ process flyeAssembly {
 }
 
 process raconPolish {
-    publishDir params.outdir + outdirs.raconPolish, mode: 'copy', saveAs: makeNextflowLogClosure(outdirs.raconPolish)
+    publishDir params.outdir + outdirs.raconPolish, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
+    publishDir params.outdir + outdirs.raconPolish, mode: 'copy'
     conda params.condaEnvsDir + 'urops-assembly'
 
     input:
@@ -199,7 +145,8 @@ process raconPolish {
 }
 
 process canuCorrect {
-    publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(outdirs.canuCorrect)
+    publishDir params.outdir + outdirs.canuCorrect, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
+    publishDir params.outdir, mode: 'copy'
     conda params.condaEnvsDir + 'urops-assembly'
     
     input:
@@ -219,7 +166,8 @@ process canuCorrect {
 }
 
 process circlator {
-    publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(outdirs.circlator)
+    publishDir params.outdir + outdirs.circlator, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
+    publishDir params.outdir, mode: 'copy'
     conda params.condaEnvsDir + 'urops-circlator'
     
     input:
@@ -246,7 +194,8 @@ process circlator {
 }
 
 process pilonPolish {
-    publishDir params.outdir + outdirs.pilonPolish, mode: 'copy', saveAs: makeNextflowLogClosure(outdirs.pilonPolish)
+    publishDir params.outdir + outdirs.pilonPolish, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
+    publishDir params.outdir + outdirs.pilonPolish, mode: 'copy'
     conda params.condaEnvsDir + 'urops-assembly'
     
     input:
@@ -270,7 +219,8 @@ process pilonPolish {
 }
 
 process separateChromosomesAndPlasmids {
-    publishDir params.outdir + outdirs.separateChromosomesAndPlasmids, mode: 'copy', saveAs: makeNextflowLogClosure(outdirs.separateChromosomesAndPlasmids)
+    publishDir params.outdir + outdirs.separateChromosomesAndPlasmids, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
+    publishDir params.outdir + outdirs.separateChromosomesAndPlasmids, mode: 'copy'
     conda params.condaEnvsDir + 'urops-assembly'
     
     input:
@@ -301,6 +251,7 @@ process separateChromosomesAndPlasmids {
 // evaluation
 
 process shortReadsCoverage {
+    publishDir params.outdir + outdirs.shortReadsCoverage, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
     // publishDir params.outdir + "${pubDirPrefix}" + outdirs.shortReadsCoverage, mode: 'copy', saveAs: makeNextflowLogClosure("${pubDirPrefix}" + outdirs.shortReadsCoverage), enabled: params.enablePublish
     conda params.condaEnvsDir + 'urops-assembly'
     
@@ -327,6 +278,7 @@ process shortReadsCoverage {
 }
 
 process longReadsCoverage {
+    publishDir params.outdir + outdirs.longReadsCoverage, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
     // publishDir params.outdir + "${pubDirPrefix}" + outdirs.longReadsCoverage, mode: 'copy', saveAs: makeNextflowLogClosure("${pubDirPrefix}" + outdirs.longReadsCoverage), enabled: params.enablePublish
     conda params.condaEnvsDir + 'urops-assembly'
     
@@ -352,6 +304,7 @@ process longReadsCoverage {
 }
 
 process prokkaAnnotate {
+    publishDir params.outdir + outdirs.prokkaAnnotate, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
     // publishDir params.outdir + "${pubDirPrefix}", mode: 'copy', saveAs: makeNextflowLogClosure("${pubDirPrefix}" + outdirs.prokkaAnnotate), enabled: params.enablePublish
     conda params.condaEnvsDir + 'urops-assembly'
 
@@ -374,6 +327,7 @@ process prokkaAnnotate {
 }
 
 process quastEvaluate {
+    publishDir params.outdir + outdirs.quastEvaluate, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
     // publishDir params.outdir + "${pubDirPrefix}", mode: 'copy', saveAs: makeNextflowLogClosure("${pubDirPrefix}" + outdirs.quastEvaluate), enabled: params.enablePublish
     conda params.condaEnvsDir + 'urops-assembly'
     
@@ -395,6 +349,7 @@ process quastEvaluate {
 }
 
 process checkmEvaluate {
+    publishDir params.outdir + outdirs.checkmEvaluate, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
     // publishDir params.outdir + "${pubDirPrefix}", mode: 'copy', saveAs: makeNextflowLogClosure("${pubDirPrefix}" + outdirs.checkmEvaluate), enabled: params.enablePublish
     conda params.condaEnvsDir + 'urops-checkm'
     

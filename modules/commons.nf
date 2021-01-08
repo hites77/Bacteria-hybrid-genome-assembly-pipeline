@@ -1,23 +1,6 @@
 nextflow.enable.dsl=2
 
 /**
- * Returns a closure to be used with publishDir's saveAs parameter which ensures
- * .command.sh, .command.log and .command.sh are be published to params.oudir + params.o_pubdir.
- *
- * @param o_pubdir: params.o.processName eg. process.o.cleanShortReads
- *
- */
-def makeNextflowLogClosure(o_pubdir) {
-    return { // it = file name
-        if (it == '.exitcode' || it == '.command.log' || it == '.command.sh' ) {
-            return params.outdir + o_pubdir + 'nextflow' + it
-        } else {
-            return it
-        }
-    }
-}
-
-/**
  * Get longest common directory of a list of files.
  */
 def getDirectory(fileList) {
