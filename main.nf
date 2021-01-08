@@ -15,7 +15,6 @@ params.raconMaxIters = 4
 params.bbduk_keep_percent = 80
 params.bbduk_start_trimq = 40
 
-params.enablePublish = false
 params.outdir = 'genome-assembly/'
 
 /// PARAMS END HERE ///
@@ -252,7 +251,7 @@ process separateChromosomesAndPlasmids {
 
 process shortReadsCoverage {
     publishDir params.outdir + outdirs.shortReadsCoverage, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
-    // publishDir params.outdir + "${pubDirPrefix}" + outdirs.shortReadsCoverage, mode: 'copy', saveAs: makeNextflowLogClosure("${pubDirPrefix}" + outdirs.shortReadsCoverage), enabled: params.enablePublish
+    publishDir "${params.outdir}/${pubDirPrefix}/${outdirs.shortReadsCoverage}" , mode: 'copy'
     conda params.condaEnvsDir + 'urops-assembly'
     
     input:
@@ -279,7 +278,7 @@ process shortReadsCoverage {
 
 process longReadsCoverage {
     publishDir params.outdir + outdirs.longReadsCoverage, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
-    // publishDir params.outdir + "${pubDirPrefix}" + outdirs.longReadsCoverage, mode: 'copy', saveAs: makeNextflowLogClosure("${pubDirPrefix}" + outdirs.longReadsCoverage), enabled: params.enablePublish
+    publishDir "${params.outdir}/${pubDirPrefix}/${outdirs.longReadsCoverage}", mode: 'copy'
     conda params.condaEnvsDir + 'urops-assembly'
     
     input:
@@ -305,7 +304,7 @@ process longReadsCoverage {
 
 process prokkaAnnotate {
     publishDir params.outdir + outdirs.prokkaAnnotate, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
-    // publishDir params.outdir + "${pubDirPrefix}", mode: 'copy', saveAs: makeNextflowLogClosure("${pubDirPrefix}" + outdirs.prokkaAnnotate), enabled: params.enablePublish
+    publishDir "${params.outdir}/${pubDirPrefix}/${outdirs.prokkaAnnotate}", mode: 'copy'
     conda params.condaEnvsDir + 'urops-assembly'
 
     input:
@@ -328,7 +327,7 @@ process prokkaAnnotate {
 
 process quastEvaluate {
     publishDir params.outdir + outdirs.quastEvaluate, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
-    // publishDir params.outdir + "${pubDirPrefix}", mode: 'copy', saveAs: makeNextflowLogClosure("${pubDirPrefix}" + outdirs.quastEvaluate), enabled: params.enablePublish
+    publishDir "${params.outdir}/${pubDirPrefix}/${outdirs.quastEvaluate}", mode: 'copy'
     conda params.condaEnvsDir + 'urops-assembly'
     
     input:
@@ -350,7 +349,7 @@ process quastEvaluate {
 
 process checkmEvaluate {
     publishDir params.outdir + outdirs.checkmEvaluate, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
-    // publishDir params.outdir + "${pubDirPrefix}", mode: 'copy', saveAs: makeNextflowLogClosure("${pubDirPrefix}" + outdirs.checkmEvaluate), enabled: params.enablePublish
+    publishDir "${params.outdir}/${pubDirPrefix}/${outdirs.checkmEvaluate}", mode: 'copy'
     conda params.condaEnvsDir + 'urops-checkm'
     
     input:
