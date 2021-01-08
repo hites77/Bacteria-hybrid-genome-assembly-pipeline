@@ -14,13 +14,13 @@ from assembly_summary import (
 from commons import make_flag
 
 FLAG_ASSEMBLY = "assembly"
-FLAG_CIRCLATOR_DIR = "circlator"
+FLAG_CIRCULARITY_SUMMARY = "circularity"
 FLAG_CHECKM_DIR = "checkm"
 
 
 def make_parser():
     parser = make_base_parser()
-    parser.add_argument(make_flag(FLAG_CIRCLATOR_DIR), required=True)
+    parser.add_argument(make_flag(FLAG_CIRCULARITY_SUMMARY), required=True)
     parser.add_argument(make_flag(FLAG_ASSEMBLY), required=True)
     parser.add_argument(make_flag(FLAG_CHECKM_DIR), required=True)
     return parser
@@ -34,7 +34,7 @@ if __name__ == "__main__":
         long_reads_coverage_dir=args[FLAG_LONG_READS_COV_DIR],
         quast_dir=args[FLAG_QUAST_DIR],
         prokka_txt=args[FLAG_PROKKA_TXT],
-        circlator_dir=args[FLAG_CIRCLATOR_DIR],
+        circularity_summary=args[FLAG_CIRCULARITY_SUMMARY],
         assembly=args[FLAG_ASSEMBLY],
         checkm_dir=args[FLAG_CHECKM_DIR],
     )

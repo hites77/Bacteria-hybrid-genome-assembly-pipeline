@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-from platon_stats import circularity
+import sys
 from pathlib import Path
 
 import pandas as pd
+import json
 
 col_circularised = "circularised"
 col_pandas_index = "Index"
@@ -72,6 +73,12 @@ def circularity(circlator_output_dir_or_log_file, contigs=None):
         else Path(circlator_output_dir_or_log_file) / "04.merge.circularise.log"
     )
     return is_circular_internal(get_merge_circularise_log_df(merge_circ_log_file), contigs)
+
+
+if __name__ == "__main__":
+    summary = circularity(sys.argv[1])
+    # print to stdout as JSON
+    print(json.dumps(summary, indent=4))
 
 
 # print(

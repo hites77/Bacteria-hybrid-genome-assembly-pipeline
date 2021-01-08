@@ -3,16 +3,16 @@
 # TODO: add support for plasmids
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
-import circlator_genome_topology
-from contig_names import get_contig_names
 import platon_stats
 from alignment_stats import average_coverage, reads_mapped
 from cds import cds
 from checkm_stats import checkm_stats
 from commons import make_flag
+from contig_names import get_contig_names
 from quast_stats import quast_stats
 
 ### CONSTANTS ###
@@ -46,12 +46,30 @@ def make_assigner(results_dict, error_list):
     return try_assign
 
 
+def filtered_circularity_sumary(circularity_summary, contigs):
+    circ_summary = json.load(open(circularity_summary))
+    if isinstance(circ_summary, str):
+        return circ_summary
+    elif isinstance(circ_summary, dict):
+        result = {
+            contig_name: circularity
+            for contig_name, circularity in circ_summary.items()
+            if contig_name in contigs
+        }
+        return result
+    else:
+        raise ValueError(
+            f"Unrecognised type of circularity summary:\nType:{type(circ_summary)}\n"
+            + f"Value:{circ_summary}"
+        )
+
+
 def make_chromosome_summary(
     short_reads_coverage_dir,
     long_reads_coverage_dir,
     quast_dir,
     prokka_txt,
-    circlator_dir,
+    circularity_summary,
     assembly,
     checkm_dir,
 ):
@@ -93,8 +111,8 @@ def make_chromosome_summary(
     assign_to_dict(KEY_CDS, lambda: cds(prokka_txt))
     assign_to_dict(
         KEY_CIRCULARITY,
-        lambda: circlator_genome_topology.circularity(
-            circlator_dir, contigs=get_contig_names(assembly)
+        lambda: filtered_circularity_sumary(
+            circularity_summary, contigs=get_contig_names(assembly)
         ),
     )
     assign_to_dict("checkm", lambda: checkm_stats(checkm_dir), update=True)

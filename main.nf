@@ -1,6 +1,6 @@
 nextflow.enable.dsl=2
 
-include { makeNextflowLogClosure; getDirectory; mapToDirectory } from './modules/commons.nf'
+// include { makeNextflowLogClosure; getDirectory; mapToDirectory } from './modules/commons.nf'
 
 /// PARAMS START HERE ///
 
@@ -29,7 +29,7 @@ outdirs.cleanLongReads = 'reads/long_cleaned/'
 outdirs.flyeAssembly = 'assembly/flye/'
 outdirs.raconPolish = 'assembly/racon/'
 outdirs.canuCorrect = 'reads/long_canu/'
-outdirs.circularise = 'assembly/circlator/'
+outdirs.circlator = 'assembly/circlator/'
 outdirs.pilonPolish = 'assembly/pilon/'
 outdirs.separateChromosomesAndPlasmids = 'assembly/separate/'
 
@@ -45,6 +45,63 @@ outdirs.checkmEvaluate = 'checkm/'
 // TODO validate: all dirs end with a slash, no spaces
 // TODO Extract out env names?
 
+/**
+ * Returns a closure to be used with publishDir's saveAs parameter which ensures
+ * .command.sh, .command.log and .command.sh are be published to params.oudir + params.o_pubdir.
+ *
+ * @param o_pubdir: params.o.processName eg. process.o.cleanShortReads
+ *
+ */
+def makeNextflowLogClosure(o_pubdir) {
+    return { // it = file name
+        if (it == '.exitcode' || it == '.command.log' || it == '.command.sh' ) {
+            return params.outdir + o_pubdir + 'nextflow' + it
+        } else {
+            return it
+        }
+    }
+}
+
+/**
+ * Get longest common directory of a list of files.
+ */
+def getDirectory(fileList) {
+    // make paths absolute
+    for (int i=0; i < fileList.size(); i++) {
+        fileList[i] = fileList[i].toAbsolutePath()
+    }
+
+    // try to find longest common directory
+    def directory = fileList[0].isDirectory() ? fileList[0] : file(fileList[0].parent)
+    boolean continueFlag = false
+    while (true) {
+        continueFlag = false
+        for (int i=0; i < fileList.size(); i++) {
+            if (fileList[i] != directory) {
+                continueFlag = true
+                if (fileList[i].toString().length() >= directory.toString().length()) {
+                    fileList[i] = file(fileList[i].parent)
+                }
+
+                if (fileList[i].toString().length() < directory.toString().length()) {
+                    directory = fileList[i]
+                }
+            }
+        }
+        if (!continueFlag) {
+            break
+        }
+    }
+
+    return directory
+}
+
+/**
+ * Transforms a channel of lists of files to a channel of directories by applying getDirectory to each list.
+ */
+def mapToDirectory(fileListChan) {
+    return fileListChan.map { getDirectory(it) }
+}
 
 process cleanShortReads {
     publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(outdirs.cleanShortReads)
@@ -110,11 +167,13 @@ process flyeAssembly {
     path '.exitcode'
     path outdirs.flyeAssembly + 'assembly.fasta', emit: assemblyFa
     path outdirs.flyeAssembly + '*', emit: allFiles
+    path 'any_circular_contigs.txt', emit: anyCircularFile
 
     script:
     """
     mkdir -p ${outdirs.flyeAssembly} # flye can only create 1 dir
     flye --plasmids --threads $params.threads --pacbio-raw $pacbioFq -o ${outdirs.flyeAssembly}
+    flye_circularity.py ${outdirs.flyeAssembly} > 'any_circular_contigs.txt'
     """
 }
 
@@ -159,8 +218,8 @@ process canuCorrect {
     """
 }
 
-process circularise {
-    publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(outdirs.circularise)
+process circlator {
+    publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(outdirs.circlator)
     conda params.condaEnvsDir + 'urops-circlator'
     
     input:
@@ -171,15 +230,18 @@ process circularise {
     path '.command.sh'
     path '.command.log'
     path '.exitcode'
-    path outdirs.circularise + '06.fixstart.fasta', emit: assemblyFa
-    path outdirs.circularise + '*', emit: allFiles
+    path outdirs.circlator + '06.fixstart.fasta', emit: assemblyFa
+    path outdirs.circlator + '*', emit: allFiles
+    path 'circularity_summary.json', emit: circularitySummary
 
     script:
     """
     # circlator can't handle nested directories
     circlator all $assemblyFa $pacbioFa circlator-temp
-    mkdir -p ${outdirs.circularise}
-    mv circlator-temp/* ${outdirs.circularise}
+    circlator_circularity_summary.py circlator-temp > circularity_summary.json
+
+    mkdir -p ${outdirs.circlator}
+    mv circlator-temp/* ${outdirs.circlator}
     """
 }
 
@@ -220,9 +282,9 @@ process separateChromosomesAndPlasmids {
     path '.command.log'
     path '.exitcode'
     path 'assembly.chromosome.fasta', emit: chromosomeFa
-    path 'assembly.plasmid.fasta' optional true, emit: plasmidFa
-    path 'assembly.tsv' optional true, emit: platonTsv
-    path 'assembly.json' optional true, emit: platonJson
+    path 'assembly.plasmid.fasta' ,optional: true, emit: plasmidFa
+    path 'assembly.tsv' ,optional: true, emit: platonTsv
+    path 'assembly.json' ,optional: true, emit: platonJson
 
     script:
     """
@@ -239,11 +301,11 @@ process separateChromosomesAndPlasmids {
 // evaluation
 
 process shortReadsCoverage {
-    publishDir params.outdir + pubDirPrefix + outdirs.shortReadsCoverage, mode: 'copy', saveAs: makeNextflowLogClosure(pubDirPrefix + outdirs.shortReadsCoverage), enabled: params.enablePublish
+    // publishDir params.outdir + "${pubDirPrefix}" + outdirs.shortReadsCoverage, mode: 'copy', saveAs: makeNextflowLogClosure("${pubDirPrefix}" + outdirs.shortReadsCoverage), enabled: params.enablePublish
     conda params.condaEnvsDir + 'urops-assembly'
     
     input:
-    path pubDirPrefix
+    val pubDirPrefix
     path assemblyFa
     path illumina1Fq
     path illumina2Fq
@@ -265,11 +327,11 @@ process shortReadsCoverage {
 }
 
 process longReadsCoverage {
-    publishDir params.outdir + pubDirPrefix + outdirs.longReadsCoverage, mode: 'copy', saveAs: makeNextflowLogClosure(pubDirPrefix + outdirs.longReadsCoverage), enabled: params.enablePublish
+    // publishDir params.outdir + "${pubDirPrefix}" + outdirs.longReadsCoverage, mode: 'copy', saveAs: makeNextflowLogClosure("${pubDirPrefix}" + outdirs.longReadsCoverage), enabled: params.enablePublish
     conda params.condaEnvsDir + 'urops-assembly'
     
     input:
-    path pubDirPrefix
+    val pubDirPrefix
     path assemblyFa
     path pacbioFq
     
@@ -290,11 +352,11 @@ process longReadsCoverage {
 }
 
 process prokkaAnnotate {
-    publishDir params.outdir + pubDirPrefix, mode: 'copy', saveAs: makeNextflowLogClosure(pubDirPrefix + outdirs.prokkaAnnotate), enabled: params.enablePublish
+    // publishDir params.outdir + "${pubDirPrefix}", mode: 'copy', saveAs: makeNextflowLogClosure("${pubDirPrefix}" + outdirs.prokkaAnnotate), enabled: params.enablePublish
     conda params.condaEnvsDir + 'urops-assembly'
 
     input:
-    path pubDirPrefix
+    val pubDirPrefix
     path assemblyFa
     
     output:
@@ -312,11 +374,11 @@ process prokkaAnnotate {
 }
 
 process quastEvaluate {
-    publishDir params.outdir + pubDirPrefix, mode: 'copy', saveAs: makeNextflowLogClosure(pubDirPrefix + outdirs.quastEvaluate), enabled: params.enablePublish
+    // publishDir params.outdir + "${pubDirPrefix}", mode: 'copy', saveAs: makeNextflowLogClosure("${pubDirPrefix}" + outdirs.quastEvaluate), enabled: params.enablePublish
     conda params.condaEnvsDir + 'urops-assembly'
     
     input:
-    path pubDirPrefix
+    val pubDirPrefix
     path assemblyFa
     path prokkaGff
     
@@ -333,11 +395,11 @@ process quastEvaluate {
 }
 
 process checkmEvaluate {
-    publishDir params.outdir + pubDirPrefix, mode: 'copy', saveAs: makeNextflowLogClosure(pubDirPrefix + outdirs.checkmEvaluate), enabled: params.enablePublish
+    // publishDir params.outdir + "${pubDirPrefix}", mode: 'copy', saveAs: makeNextflowLogClosure("${pubDirPrefix}" + outdirs.checkmEvaluate), enabled: params.enablePublish
     conda params.condaEnvsDir + 'urops-checkm'
     
     input:
-    path pubDirPrefix
+    val pubDirPrefix
     path assemblyFa
     
     output:
@@ -363,7 +425,7 @@ process makeChromosomeSummary {
     path longReadsCoverageDir
     path quastDir
     path prokkaTxt
-    path circlatorDir
+    path circularitySummary
     path assemblyFa
     path checkmDir
     
@@ -376,7 +438,7 @@ process makeChromosomeSummary {
         --long $longReadsCoverageDir \
         --quast $quastDir \
         --prokka $prokkaTxt \
-        --circlator $circlatorDir \
+        --circularity $circularitySummary \
         --assembly $assemblyFa \
         --checkm $checkmDir \
         --out chromosome-summary.json
@@ -407,21 +469,56 @@ process makePlasmidSummary {
     """
 }
 
+process splitByCircularity {
+    input:
+    path assemblyFa
+    path anyCircularFile
+
+    output:
+    path 'circular-assembly.fa' ,optional: true, emit: circularAssembly
+    path 'linear-assembly.fa' ,optional: true, emit: linearAssembly 
+
+    script:
+    """
+    if [[ `cat $anyCircularFile` == yes ]]; then
+        ln -s $assemblyFa circular-assembly.fa
+    else
+        ln -s $assemblyFa linear-assembly.fa
+    fi
+    """
+}
+
+workflow circulariseAssembly {
+    take:
+    assembly
+    longReads
+    
+    main:
+    canuCorrect(longReads)
+    circlator(assembly, canuCorrect.out.pacbioFa)
+
+    emit:
+    assembly = circlator.out.assemblyFa
+    circularitySummary = circlator.out.circularitySummary
+}
+
+process makeLinearAssemblyCircSummary {
+    input:
+    path assemblyFa
+
+    output:
+    path 'circularity_summary.json', emit: circularitySummary
+
+    script:
+    """echo \"all linear\" > circularity_summary.json"""
+}
+
 workflow assembleGenome {
     take:
     rawIllumina1Fq
     rawIllumina2Fq
     rawPacbioFq
 
-    emit:
-    chromosomeFa = separateChromosomesAndPlasmids.out.chromosomeFa
-    plasmidFa = separateChromosomesAndPlasmids.out.plasmidFa
-    cleanedShortReads1 = cleanedShort1
-    cleanedShortReads2 = cleanedShort2
-    cleanedLongReads = cleanedLong
-    circlatorDir = mapToDirectory(circularise.out.allFiles)
-    platonTsv = separateChromosomesAndPlasmids.out.platonTsv
-    
     main:
     cleanShortReads(rawIllumina1Fq, rawIllumina2Fq)
 
@@ -434,10 +531,26 @@ workflow assembleGenome {
 
     flyeAssembly(cleanedLong)
     raconPolish(flyeAssembly.out.assemblyFa, cleanedLong)
-    canuCorrect(cleanedLong)
-    circularise(raconPolish.out.assemblyFa, canuCorrect.out.pacbioFa)
-    pilonPolish(circularise.out.assemblyFa, cleanedShort1, cleanedShort2)
-    separateChromosomesAndPlasmids(pilonPolish.out.assemblyFa, mapToDirectory(flye.out.allFiles))
+    splitByCircularity(raconPolish.out.assemblyFa, flyeAssembly.out.anyCircularFile)
+
+    circulariseAssembly(splitByCircularity.out.circularAssembly, cleanedLong)
+    makeLinearAssemblyCircSummary(splitByCircularity.out.linearAssembly)
+
+    assembly = circulariseAssembly.out.assembly.mix(splitByCircularity.out.linearAssembly)
+    circularitySummary = circulariseAssembly.out.circularitySummary.mix(makeLinearAssemblyCircSummary.out.circularitySummary)
+
+    pilonPolish(assembly, cleanedShort1, cleanedShort2)
+    separateChromosomesAndPlasmids(pilonPolish.out.assemblyFa, mapToDirectory(flyeAssembly.out.allFiles))
+
+    emit:
+    chromosomeFa = separateChromosomesAndPlasmids.out.chromosomeFa
+    plasmidFa = separateChromosomesAndPlasmids.out.plasmidFa
+    cleanedShortReads1 = cleanedShort1
+    cleanedShortReads2 = cleanedShort2
+    cleanedLongReads = cleanedLong
+    circularitySummary = circularitySummary
+    platonTsv = separateChromosomesAndPlasmids.out.platonTsv
+    
 }
 
 workflow evaluateChromosome {
@@ -446,7 +559,7 @@ workflow evaluateChromosome {
     cleanedShortReads1
     cleanedShortReads2
     cleanedLongReads
-    circlatorDir
+    circularitySummary
 
     main:
     shortReadsCoverage(outdirs.evaluateChromosome, assembly, cleanedShortReads1, cleanedShortReads2)
@@ -459,7 +572,7 @@ workflow evaluateChromosome {
         longReadsCoverage.out.stats.map { file(it.parent) }, // HACK
         mapToDirectory(quastEvaluate.out.allFiles),
         prokkaAnnotate.out.txt,
-        circlatorDir,
+        circularitySummary,
         assembly,
         mapToDirectory(checkmEvaluate.out.allFiles)
     )
@@ -492,13 +605,13 @@ workflow full {
     rawIllumina2Fq = params.rawIllumina2
     rawPacbioFq = params.rawPacbio
 
-    assembleGenome(rawIllumina1F1, rawIllumina2Fq, rawPacbioFq)
+    assembleGenome(rawIllumina1Fq, rawIllumina2Fq, rawPacbioFq)
     evaluateChromosome(
         assembleGenome.out.chromosomeFa,
         assembleGenome.out.cleanedShortReads1,
         assembleGenome.out.cleanedShortReads2,
         assembleGenome.out.cleanedLongReads,
-        assembleGenome.out.circlatorDir
+        assembleGenome.out.circularitySummary
     )
     evaluatePlasmid(
         assembleGenome.out.plasmidFa,
