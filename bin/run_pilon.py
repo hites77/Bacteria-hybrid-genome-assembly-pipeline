@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
 
 import argparse
+import re
 import subprocess
 import sys
 from pathlib import Path
 
+from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
+from commons import make_flag
+
 ### CONSTANTS ###
 
 PILON_PREFIX = "pilon"
-FINAL_ASSEMBLY_SYMLINK = "final_assembly.fasta"
+PILON_INFO_FILE = "pilon_info.tsv"
 
 ### FUNCTIONS ###
 
@@ -46,14 +51,22 @@ def no_changes(changes_file):
     return changes_file.read_text().strip() == ""
 
 
-def main(assembly_name, illumina1_fq, illumina2_fq, threads, max_iters):
+SUFFIX = re.compile("(_pilon)+$")
+
+
+def strip_suffix(name):
+    return SUFFIX.sub("", name)
+
+
+def strip_pilon_suffix(input_fasta, output_fasta):
+    records = SeqIO.parse(input_fasta, "fasta")
+    new_records = (SeqRecord(rec.seq, id=strip_suffix(rec.id), description="") for rec in records)
+    SeqIO.write(new_records, output_fasta, "fasta")
+
+
+def main(assembly_name, output_assembly, illumina1_fq, illumina2_fq, threads, max_iters):
     if max_iters < 1:
         raise ValueError(f"{max_iters} should be at least 1")
-
-    # this file is present while pilon has yet to / failed to converge
-    incomplete_file = Path("incomplete")
-
-    incomplete_file.touch()
 
     changes_file = None
     i = 0
@@ -65,22 +78,10 @@ def main(assembly_name, illumina1_fq, illumina2_fq, threads, max_iters):
         if no_changes(changes_file):
             break
 
-    # run pilon
-    # bamFile = preprocess(assemblyFasta, illumina1Fastq, illumina2Fastq, threads)
-    # run_pilon(assemblyFasta, bamFile, 1)
-    # changes_file = None
-    # for i in range(2, maxIters + 1):
-    #     changes_file = Path(f"pilon{i-1}.changes")
-    #     assemblyFasta = f"pilon{i-1}.fasta"
-    #     if no_changes(changes_file):
-    #         break
-    #     bamFile = preprocess(assemblyFasta, illumina1Fastq, illumina2Fastq, threads)
-    #     run_pilon(assemblyFasta, bamFile, i)
-
     if no_changes(changes_file):  ## pilon converged
-        incomplete_file.unlink()
-
         final_assembly_name = f"pilon{i-1}.fasta"
+        num_iters = i - 1
+        converged = True
 
         Path(assembly_name).unlink()  # remove since no changes
     else:  ## pilon did not converge
@@ -93,10 +94,14 @@ def main(assembly_name, illumina1_fq, illumina2_fq, threads, max_iters):
         print(warning, file=sys.stderr)
 
         final_assembly_name = assembly_name
+        num_iters = i
+        converged = False
+
+    open(PILON_INFO_FILE, "w").write("iterations\tconverged\n" + f"{num_iters}\t{converged}")
+
+    strip_pilon_suffix(final_assembly_name, output_assembly)
 
     remove_temp_files()
-
-    Path(FINAL_ASSEMBLY_SYMLINK).symlink_to(final_assembly_name)
 
 
 ### PARSER ####
@@ -107,50 +112,50 @@ PARSER_READS_1 = "reads1"
 PARSER_READS_2 = "reads2"
 PARSER_THREADS = "threads"
 PARSER_MAX_ITERS = "maxiters"
+PARSER_OUT_ASSEMBLY = "out"
 
 
-def make_flag(name):
-    return "--" + name
+def make_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(make_flag(PARSER_ASSEMBLY), required=True, help="Path to assembly")
+    parser.add_argument(
+        make_flag(PARSER_READS_1),
+        required=True,
+        help="Path to one of the short read files",
+    )
+    parser.add_argument(
+        make_flag(PARSER_READS_2),
+        required=True,
+        help="Path to the other short read file",
+    )
+    parser.add_argument(
+        make_flag(PARSER_THREADS),
+        type=int,
+        required=True,
+        help="Number of threads to use",
+    )
+    parser.add_argument(
+        make_flag(PARSER_MAX_ITERS),
+        type=int,
+        required=True,
+        help="Maximum number of iterations to run pilon",
+    )
+    parser.add_argument(
+        make_flag(PARSER_OUT_ASSEMBLY), required=True, help="Path to output assembly"
+    )
+    return parser
 
-
-parser = argparse.ArgumentParser()
-parser.add_argument(make_flag(PARSER_ASSEMBLY), nargs=1, required=True, help="Path to assembly")
-parser.add_argument(
-    make_flag(PARSER_READS_1),
-    nargs=1,
-    required=True,
-    help="Path to one of the short read files",
-)
-parser.add_argument(
-    make_flag(PARSER_READS_2),
-    nargs=1,
-    required=True,
-    help="Path to the other short read file",
-)
-parser.add_argument(
-    make_flag(PARSER_THREADS),
-    nargs=1,
-    type=int,
-    required=True,
-    help="Number of threads to use",
-)
-parser.add_argument(
-    make_flag(PARSER_MAX_ITERS),
-    nargs=1,
-    type=int,
-    required=True,
-    help="Maximum number of iterations to run pilon",
-)
 
 ### MAIN ###
 
 if __name__ == "__main__":
+    parser = make_parser()
     args = vars(parser.parse_args())
-    print(args)
     main(
-        assembly_name=args[PARSER_ASSEMBLY][0],
-        illumina1_fq=args[PARSER_READS_1][0],
-        illumina2_fq=args[PARSER_READS_2][0],
-        threads=args[PARSER_THREADS][0],
-        max_iters=args[PARSER_MAX_ITERS][0],
+        assembly_name=args[PARSER_ASSEMBLY],
+        illumina1_fq=args[PARSER_READS_1],
+        illumina2_fq=args[PARSER_READS_2],
+        threads=args[PARSER_THREADS],
+        max_iters=args[PARSER_MAX_ITERS],
+        output_assembly=args[PARSER_OUT_ASSEMBLY],
     )

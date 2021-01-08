@@ -2,15 +2,17 @@
 
 # TODO: add support for plasmids
 
-import json
+import argparse
 import sys
 from pathlib import Path
 
+import circlator_genome_topology
+from contig_names import get_contig_names
+import platon_stats
 from alignment_stats import average_coverage, reads_mapped
 from cds import cds
 from checkm_stats import checkm_stats
-import circlator_genome_topology
-import platon_stats
+from commons import make_flag
 from quast_stats import quast_stats
 
 ### CONSTANTS ###
@@ -50,6 +52,7 @@ def make_chromosome_summary(
     quast_dir,
     prokka_txt,
     circlator_dir,
+    assembly,
     checkm_dir,
 ):
     """
@@ -88,7 +91,12 @@ def make_chromosome_summary(
     )
     assign_to_dict("quast", lambda: quast_stats(quast_dir), update=True)
     assign_to_dict(KEY_CDS, lambda: cds(prokka_txt))
-    assign_to_dict(KEY_CIRCULARITY, lambda: circlator_genome_topology.circularity(circlator_dir))
+    assign_to_dict(
+        KEY_CIRCULARITY,
+        lambda: circlator_genome_topology.circularity(
+            circlator_dir, contigs=get_contig_names(assembly)
+        ),
+    )
     assign_to_dict("checkm", lambda: checkm_stats(checkm_dir), update=True)
 
     results["errors"] = error_list
@@ -142,45 +150,21 @@ def make_plasmid_summary(
     return results
 
 
-def make_summary_and_save(
-    save_to,
-    short_reads_coverage_dir,
-    long_reads_coverage_dir,
-    quast_dir,
-    prokka_dir,
-    circlator_dir,
-    checkm_dir,
-):
-    """Saves summary statistsics as a pretty-printed JSON file.
+### PARSER ###
 
-    See make_summary for assumptions and details of dictiontary saved.
-
-    Args:
-        save_to: Path to file where summary will be saved in JSON format.
-
-        The other args are the output directories for various parts of
-        the assembly / evaluation pipeline.
-    """
-    summary = make_chromosome_summary(
-        short_reads_coverage_dir,
-        long_reads_coverage_dir,
-        quast_dir,
-        prokka_dir,
-        circlator_dir,
-        checkm_dir,
-    )
-
-    json.dump(summary, open(save_to, "w"), indent=4)
+# constants
+FLAG_SHORT_READS_COV_DIR = "short"
+FLAG_LONG_READS_COV_DIR = "long"
+FLAG_QUAST_DIR = "quast"
+FLAG_PROKKA_TXT = "prokka"
+FLAG_OUT = "out"
 
 
-# TODO: named inputs
-if __name__ == "__main__":
-    make_summary_and_save(
-        save_to=sys.argv[1],
-        short_reads_coverage_dir=sys.argv[2],
-        long_reads_coverage_dir=sys.argv[3],
-        quast_dir=sys.argv[4],
-        prokka_dir=sys.argv[5],
-        circlator_dir=sys.argv[6],
-        checkm_dir=sys.argv[7],
-    )
+def make_base_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(make_flag(FLAG_SHORT_READS_COV_DIR), required=True)
+    parser.add_argument(make_flag(FLAG_LONG_READS_COV_DIR), required=True)
+    parser.add_argument(make_flag(FLAG_QUAST_DIR), required=True)
+    parser.add_argument(make_flag(FLAG_PROKKA_TXT), required=True)
+    parser.add_argument(make_flag(FLAG_OUT), required=True)
+    return parser

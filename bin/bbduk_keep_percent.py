@@ -10,6 +10,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from commons import make_flag
+
 ### CONSTANTS ###
 
 TRIMQ_USED_FILE = "trimq_used.txt"
@@ -114,10 +116,6 @@ FLAG_START_TRIMQ = "start_trimq"
 FLAG_MIN_TRIMQ = "min_trimq"
 FLAG_BBDUK_ARGS = "args"
 FLAG_INFO_DIR = "infodir"
-
-
-def make_flag(name):
-    return "--" + name
 
 
 def make_parser():

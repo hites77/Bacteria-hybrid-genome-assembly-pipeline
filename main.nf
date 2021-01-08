@@ -1,5 +1,7 @@
 nextflow.enable.dsl=2
 
+include { makeNextflowLogClosure; getDirectory; mapToDirectory } from './modules/commons.nf'
+
 /// PARAMS START HERE ///
 
 /// Parameters for specific programs/scripts
@@ -14,91 +16,38 @@ params.bbduk_keep_percent = 80
 params.bbduk_start_trimq = 40
 
 params.enablePublish = false
+params.outdir = 'genome-assembly/'
+
+/// PARAMS END HERE ///
 
 // TODO validate params
 
 // output directories for each process relative to params.outdir
-params.o = {}
-params.o.cleanShortReads = 'reads/short_cleaned/'
-params.o.cleanLongReads = 'reads/long_cleaned/'
-params.o.flyeAssembly = 'assembly/flye/'
-params.o.raconPolish = 'assembly/racon/'
-params.o.canuCorrect = 'reads/long_canu/'
-params.o.circularise = 'assembly/circlator/'
-params.o.pilonPolish = 'assembly/pilon/'
-params.o.separateChromosomesAndPlasmids = 'assembly/separate/'
-params.o.shortReadsCoverage = 'assembly_eval/short_read_coverage/'
-params.o.longReadsCoverage = 'assembly_eval/long_read_coverage/'
-params.o.prokkaAnnotate = 'assembly_eval/prokka/'
-params.o.quastEvaluate = 'assembly_eval/quast/'
-params.o.checkmEvaluate = 'assembly_eval/checkm/'
-params.o.makeSummary = 'summary/'
+outdirs = {}
+outdirs.cleanShortReads = 'reads/short_cleaned/'
+outdirs.cleanLongReads = 'reads/long_cleaned/'
+outdirs.flyeAssembly = 'assembly/flye/'
+outdirs.raconPolish = 'assembly/racon/'
+outdirs.canuCorrect = 'reads/long_canu/'
+outdirs.circularise = 'assembly/circlator/'
+outdirs.pilonPolish = 'assembly/pilon/'
+outdirs.separateChromosomesAndPlasmids = 'assembly/separate/'
 
-/// PARAMS END HERE ///
+outdirs.evaluateChromosome = 'chromosome_eval/'
+outdirs.evaluatePlasmid = 'plasmid_eval/'
+
+outdirs.shortReadsCoverage = 'short_read_coverage/'
+outdirs.longReadsCoverage = 'long_read_coverage/'
+outdirs.prokkaAnnotate = 'prokka/'
+outdirs.quastEvaluate = 'quast/'
+outdirs.checkmEvaluate = 'checkm/'
 
 // TODO validate: all dirs end with a slash, no spaces
 // TODO Extract out env names?
 
-/**
- * Returns a closure to be used with publishDir's saveAs parameter which ensures
- * .command.sh, .command.log and .command.sh are be published to params.oudir + params.o_pubdir.
- *
- * @param o_pubdir: params.o.processName eg. process.o.cleanShortReads
- *
- */
-def makeNextflowLogClosure(o_pubdir) {
-    return { // it = file name
-        if (it == '.exitcode' || it == '.command.log' || it == '.command.sh' ) {
-            return params.outdir + o_pubdir + 'nextflow' + it
-        } else {
-            return it
-        }
-    }
-}
-
-/**
- * Get longest common directory of a list of files.
- */
-def getDirectory(fileList) {
-    // make paths absolute
-    for (int i=0; i < fileList.size(); i++) {
-        fileList[i] = fileList[i].toAbsolutePath()
-    }
-
-    // try to find longest common directory
-    def directory = fileList[0].isDirectory() ? fileList[0] : file(fileList[0].parent)
-    boolean continueFlag = false
-    while (true) {
-        continueFlag = false
-        for (int i=0; i < fileList.size(); i++) {
-            if (fileList[i] != directory) {
-                continueFlag = true
-                if (fileList[i].toString().length() >= directory.toString().length()) {
-                    fileList[i] = file(fileList[i].parent)
-                }
-
-                if (fileList[i].toString().length() < directory.toString().length()) {
-                    directory = fileList[i]
-                }
-            }
-        }
-        if (!continueFlag) {
-            break
-        }
-    }
-
-    return directory
-}
-
-/**
- * Transforms a channel of lists of files to a channel of directories by applying getDirectory to each list.
- */
-def mapToDirectory(fileListChan) {
-    return fileListChan.map { getDirectory(it) }
-}
 
 process cleanShortReads {
-    publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.cleanShortReads)
+    publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(outdirs.cleanShortReads)
     conda params.condaEnvsDir + 'urops-assembly'
 
     input:
@@ -109,23 +58,23 @@ process cleanShortReads {
     path '.command.sh'
     path '.command.log'
     path '.exitcode'
-    path params.o.cleanShortReads + 'illumina1.fq', emit: fq1
-    path params.o.cleanShortReads + 'illumina2.fq', emit: fq2
-    path params.o.cleanShortReads + 'trimq_used.txt'
+    path outdirs.cleanShortReads + 'illumina1.fq', emit: fq1
+    path outdirs.cleanShortReads + 'illumina2.fq', emit: fq2
+    path outdirs.cleanShortReads + 'trimq_used.txt'
 
     script:
     """
-    mkdir -p ${params.o.cleanShortReads}
+    mkdir -p ${outdirs.cleanShortReads}
     bbduk_keep_percent.py \
             --in1 $illumina1Fq --in2=$illumina2Fq \
-            --out1 ${params.o.cleanShortReads}/illumina1.fq --out2 ${params.o.cleanShortReads}/illumina2.fq \
-            --infodir ${params.o.cleanShortReads} \
+            --out1 ${outdirs.cleanShortReads}/illumina1.fq --out2 ${outdirs.cleanShortReads}/illumina2.fq \
+            --infodir ${outdirs.cleanShortReads} \
             --keep_percent ${params.bbduk_keep_percent} --start_trimq ${params.bbduk_start_trimq} --args qtrim=rl minlength=40
     """
 }
 
 process cleanLongReads {
-    publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.cleanLongReads)
+    publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(outdirs.cleanLongReads)
     conda params.condaEnvsDir + 'urops-assembly'
 
     input:
@@ -137,19 +86,19 @@ process cleanLongReads {
     path '.command.sh'
     path '.command.log'
     path '.exitcode'
-    path params.o.cleanLongReads + 'pacbio.fq', emit: fq
+    path outdirs.cleanLongReads + 'pacbio.fq', emit: fq
 
     script:
     """
-    mkdir -p ${params.o.cleanLongReads}
+    mkdir -p ${outdirs.cleanLongReads}
     filtlong -1 $illumina1Fq -2 $illumina2Fq \
         --min_length 1000 --keep_percent 90 --trim --split 500 --mean_q_weight 10 \
-        $pacbioFq > ${params.o.cleanLongReads}/pacbio.fq
+        $pacbioFq > ${outdirs.cleanLongReads}/pacbio.fq
     """
 }
 
 process flyeAssembly {
-    publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.flyeAssembly)
+    publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(outdirs.flyeAssembly)
     conda params.condaEnvsDir + 'urops-assembly'
 
     input:
@@ -159,18 +108,18 @@ process flyeAssembly {
     path '.command.sh'
     path '.command.log'
     path '.exitcode'
-    path params.o.flyeAssembly + 'assembly.fasta', emit: assemblyFa
-    path params.o.flyeAssembly + '*', emit: allFiles
+    path outdirs.flyeAssembly + 'assembly.fasta', emit: assemblyFa
+    path outdirs.flyeAssembly + '*', emit: allFiles
 
     script:
     """
-    mkdir -p ${params.o.flyeAssembly} # flye can only create 1 dir
-    flye --plasmids --threads $params.threads --pacbio-raw $pacbioFq -o ${params.o.flyeAssembly}
+    mkdir -p ${outdirs.flyeAssembly} # flye can only create 1 dir
+    flye --plasmids --threads $params.threads --pacbio-raw $pacbioFq -o ${outdirs.flyeAssembly}
     """
 }
 
 process raconPolish {
-    publishDir params.outdir + params.o.raconPolish, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.raconPolish)
+    publishDir params.outdir + outdirs.raconPolish, mode: 'copy', saveAs: makeNextflowLogClosure(outdirs.raconPolish)
     conda params.condaEnvsDir + 'urops-assembly'
 
     input:
@@ -191,7 +140,7 @@ process raconPolish {
 }
 
 process canuCorrect {
-    publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.canuCorrect)
+    publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(outdirs.canuCorrect)
     conda params.condaEnvsDir + 'urops-assembly'
     
     input:
@@ -201,17 +150,17 @@ process canuCorrect {
     path '.command.sh'
     path '.command.log'
     path '.exitcode'
-    path params.o.canuCorrect + 'canu.correctedReads.fasta.gz', emit: pacbioFa
-    path params.o.canuCorrect + 'canu*', emit: allFiles
+    path outdirs.canuCorrect + 'canu.correctedReads.fasta.gz', emit: pacbioFa
+    path outdirs.canuCorrect + 'canu*', emit: allFiles
 
     script:
     """
-    canu -correct -p canu -d ${params.o.canuCorrect} genomeSize=5m -pacbio $pacbioFq useGrid=false
+    canu -correct -p canu -d ${outdirs.canuCorrect} genomeSize=5m -pacbio $pacbioFq useGrid=false
     """
 }
 
 process circularise {
-    publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.circularise)
+    publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(outdirs.circularise)
     conda params.condaEnvsDir + 'urops-circlator'
     
     input:
@@ -222,20 +171,20 @@ process circularise {
     path '.command.sh'
     path '.command.log'
     path '.exitcode'
-    path params.o.circularise + '06.fixstart.fasta', emit: assemblyFa
-    path params.o.circularise + '*', emit: allFiles
+    path outdirs.circularise + '06.fixstart.fasta', emit: assemblyFa
+    path outdirs.circularise + '*', emit: allFiles
 
     script:
     """
     # circlator can't handle nested directories
     circlator all $assemblyFa $pacbioFa circlator-temp
-    mkdir -p ${params.o.circularise}
-    mv circlator-temp/* ${params.o.circularise}
+    mkdir -p ${outdirs.circularise}
+    mv circlator-temp/* ${outdirs.circularise}
     """
 }
 
 process pilonPolish {
-    publishDir params.outdir + params.o.pilonPolish, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.pilonPolish)
+    publishDir params.outdir + outdirs.pilonPolish, mode: 'copy', saveAs: makeNextflowLogClosure(outdirs.pilonPolish)
     conda params.condaEnvsDir + 'urops-assembly'
     
     input:
@@ -247,18 +196,19 @@ process pilonPolish {
     path '.command.sh'
     path '.command.log'
     path '.exitcode'
-    path 'pilon*'
     path 'final_assembly.fasta', emit: assemblyFa
-    path 'incomplete' optional true
+    path 'pilon*.changes'
+    path 'pilon_info.tsv'
 
     script:
     """
-    run_pilon.py --assembly $assemblyFa --reads1 $illumina1Fq --reads2 $illumina2Fq --maxiters $params.pilonMaxIters --threads $params.threads
+    run_pilon.py --assembly $assemblyFa --reads1 $illumina1Fq --reads2 $illumina2Fq --out final_assembly.fasta \
+                --maxiters $params.pilonMaxIters --threads $params.threads
     """
 }
 
 process separateChromosomesAndPlasmids {
-    publishDir params.outdir + params.o.separateChromosomesAndPlasmids, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.separateChromosomesAndPlasmids)
+    publishDir params.outdir + outdirs.separateChromosomesAndPlasmids, mode: 'copy', saveAs: makeNextflowLogClosure(outdirs.separateChromosomesAndPlasmids)
     conda params.condaEnvsDir + 'urops-assembly'
     
     input:
@@ -286,11 +236,14 @@ process separateChromosomesAndPlasmids {
     """
 }
 
+// evaluation
+
 process shortReadsCoverage {
-    publishDir params.outdir + params.o.shortReadsCoverage, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.shortReadsCoverage), enabled: params.enablePublish
+    publishDir params.outdir + pubDirPrefix + outdirs.shortReadsCoverage, mode: 'copy', saveAs: makeNextflowLogClosure(pubDirPrefix + outdirs.shortReadsCoverage), enabled: params.enablePublish
     conda params.condaEnvsDir + 'urops-assembly'
     
     input:
+    path pubDirPrefix
     path assemblyFa
     path illumina1Fq
     path illumina2Fq
@@ -312,10 +265,11 @@ process shortReadsCoverage {
 }
 
 process longReadsCoverage {
-    publishDir params.outdir + params.o.longReadsCoverage, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.longReadsCoverage), enabled: params.enablePublish
+    publishDir params.outdir + pubDirPrefix + outdirs.longReadsCoverage, mode: 'copy', saveAs: makeNextflowLogClosure(pubDirPrefix + outdirs.longReadsCoverage), enabled: params.enablePublish
     conda params.condaEnvsDir + 'urops-assembly'
     
     input:
+    path pubDirPrefix
     path assemblyFa
     path pacbioFq
     
@@ -336,31 +290,33 @@ process longReadsCoverage {
 }
 
 process prokkaAnnotate {
-    publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.prokkaAnnotate), enabled: params.enablePublish
+    publishDir params.outdir + pubDirPrefix, mode: 'copy', saveAs: makeNextflowLogClosure(pubDirPrefix + outdirs.prokkaAnnotate), enabled: params.enablePublish
     conda params.condaEnvsDir + 'urops-assembly'
 
     input:
+    path pubDirPrefix
     path assemblyFa
     
     output:
     path '.command.sh'
     path '.command.log'
     path '.exitcode'
-    path params.o.prokkaAnnotate + 'prokka.gff', emit: gff
-    path params.o.prokkaAnnotate + 'prokka.txt', emit: txt
-    path params.o.prokkaAnnotate + '*', emit: allFiles
+    path outdirs.prokkaAnnotate + 'prokka.gff', emit: gff
+    path outdirs.prokkaAnnotate + 'prokka.txt', emit: txt
+    path outdirs.prokkaAnnotate + '*', emit: allFiles
 
     script:
     """
-    prokka --cpus 0 --outdir ${params.o.prokkaAnnotate} --prefix prokka --addgenes --addmrna --compliant --rfam $assemblyFa
+    prokka --cpus 0 --outdir ${outdirs.prokkaAnnotate} --prefix prokka --addgenes --addmrna --compliant --rfam $assemblyFa
     """
 }
 
 process quastEvaluate {
-    publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.quastEvaluate), enabled: params.enablePublish
+    publishDir params.outdir + pubDirPrefix, mode: 'copy', saveAs: makeNextflowLogClosure(pubDirPrefix + outdirs.quastEvaluate), enabled: params.enablePublish
     conda params.condaEnvsDir + 'urops-assembly'
     
     input:
+    path pubDirPrefix
     path assemblyFa
     path prokkaGff
     
@@ -368,37 +324,37 @@ process quastEvaluate {
     path '.command.sh'
     path '.command.log'
     path '.exitcode'
-    path params.o.quastEvaluate + '*', emit: allFiles
+    path outdirs.quastEvaluate + '*', emit: allFiles
     
     script:
     """
-    quast $assemblyFa --circos -g $prokkaGff -t ${params.threads} --gene-finding --fragmented --conserved-genes-finding --rna-finding -o ${params.o.quastEvaluate}
+    quast $assemblyFa --circos -g $prokkaGff -t ${params.threads} --gene-finding --fragmented --conserved-genes-finding --rna-finding -o ${outdirs.quastEvaluate}
     """
 }
 
 process checkmEvaluate {
-    publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure(params.o.checkmEvaluate), enabled: params.enablePublish
+    publishDir params.outdir + pubDirPrefix, mode: 'copy', saveAs: makeNextflowLogClosure(pubDirPrefix + outdirs.checkmEvaluate), enabled: params.enablePublish
     conda params.condaEnvsDir + 'urops-checkm'
     
     input:
+    path pubDirPrefix
     path assemblyFa
     
     output:
     path '.command.sh'
     path '.command.log'
     path '.exitcode'
-    path params.o.checkmEvaluate + '*', emit: allFiles
+    path outdirs.checkmEvaluate + '*', emit: allFiles
 
     script:
     """
     mkdir input
     mv $assemblyFa input/assembly.fna
-    checkm lineage_wf input ${params.o.checkmEvaluate}
+    checkm lineage_wf input ${outdirs.checkmEvaluate}
     """
 }
 
 process makeChromosomeSummary {
-    // publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure()
     publishDir params.outdir, mode: 'copy'
     conda params.condaEnvsDir + 'urops-assembly'
     
@@ -408,12 +364,10 @@ process makeChromosomeSummary {
     path quastDir
     path prokkaTxt
     path circlatorDir
+    path assemblyFa
     path checkmDir
     
     output:
-    // path '.command.sh'
-    // path '.command.log'
-    // path '.exitcode'
     path 'chromosome-summary.json'
 
     script:
@@ -423,13 +377,13 @@ process makeChromosomeSummary {
         --quast $quastDir \
         --prokka $prokkaTxt \
         --circlator $circlatorDir \
+        --assembly $assemblyFa \
         --checkm $checkmDir \
         --out chromosome-summary.json
     """
 }
 
 process makePlasmidSummary {
-    // publishDir params.outdir, mode: 'copy', saveAs: makeNextflowLogClosure()
     publishDir params.outdir, mode: 'copy'
     conda params.condaEnvsDir + 'urops-assembly'
     
@@ -441,9 +395,6 @@ process makePlasmidSummary {
     path platonDir
     
     output:
-    // path '.command.sh'
-    // path '.command.log'
-    // path '.exitcode'
     path 'plasmid-summary.json'
 
     script:
@@ -498,17 +449,18 @@ workflow evaluateChromosome {
     circlatorDir
 
     main:
-    shortReadsCoverage(assembly, cleanedShortReads1, cleanedShortReads2)
-    longReadsCoverage(assembly, cleanedLongReads)
-    prokkaAnnotate(assembly)
-    quastEvaluate(assembly, prokkaAnnotate.out.gff)
-    checkmEvaluate(assembly)
+    shortReadsCoverage(outdirs.evaluateChromosome, assembly, cleanedShortReads1, cleanedShortReads2)
+    longReadsCoverage(outdirs.evaluateChromosome, assembly, cleanedLongReads)
+    prokkaAnnotate(outdirs.evaluateChromosome, assembly)
+    quastEvaluate(outdirs.evaluateChromosome, assembly, prokkaAnnotate.out.gff)
+    checkmEvaluate(outdirs.evaluateChromosome, assembly)
     makeChromosomeSummary(
         shortReadsCoverage.out.stats.map { file(it.parent) }, // HACK
         longReadsCoverage.out.stats.map { file(it.parent) }, // HACK
         mapToDirectory(quastEvaluate.out.allFiles),
         prokkaAnnotate.out.txt,
         circlatorDir,
+        assembly,
         mapToDirectory(checkmEvaluate.out.allFiles)
     )
 }
@@ -522,10 +474,10 @@ workflow evaluatePlasmid {
     platonTsv
 
     main:
-    shortReadsCoverage(assembly, cleanedShortReads1, cleanedShortReads2)
-    longReadsCoverage(assembly, cleanedLongReads)
-    prokkaAnnotate(assembly)
-    quastEvaluate(assembly, prokkaAnnotate.out.gff)
+    shortReadsCoverage(outdirs.evaluatePlasmid, assembly, cleanedShortReads1, cleanedShortReads2)
+    longReadsCoverage(outdirs.evaluatePlasmid, assembly, cleanedLongReads)
+    prokkaAnnotate(outdirs.evaluatePlasmid, assembly)
+    quastEvaluate(outdirs.evaluatePlasmid, assembly, prokkaAnnotate.out.gff)
     makePlasmidSummary(
         shortReadsCoverage.out.stats.map { file(it.parent) }, // HACK
         longReadsCoverage.out.stats.map { file(it.parent) }, // HACK

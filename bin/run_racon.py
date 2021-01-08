@@ -11,6 +11,7 @@ import subprocess
 from pathlib import Path
 
 import assembly_diff
+from commons import make_flag
 
 ### CONSTANTS ###
 
@@ -119,10 +120,6 @@ FLAG_OUT_PREFIX = "out_prefix"
 FLAG_THREADS = "threads"
 FLAG_MAXITERS = "maxiters"
 FLAG_RACON_ARGS = "args"
-
-
-def make_flag(name):
-    return "--" + name
 
 
 def make_parser():

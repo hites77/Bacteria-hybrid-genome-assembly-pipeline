@@ -1,27 +1,25 @@
 #!/usr/bin/env python3
 
-import argparse
 import json
 
-from assembly_summary import make_plasmid_summary
+from assembly_summary import (
+    FLAG_ASSEMBLY,
+    FLAG_LONG_READS_COV_DIR,
+    FLAG_OUT,
+    FLAG_PROKKA_TXT,
+    FLAG_QUAST_DIR,
+    FLAG_SHORT_READS_COV_DIR,
+    make_base_parser,
+    make_plasmid_summary,
+)
 from commons import make_flag
 
-FLAG_SHORT_READS_COV_DIR = "short"
-FLAG_LONG_READS_COV_DIR = "long"
-FLAG_QUAST_DIR = "quast"
-FLAG_PROKKA_TXT = "prokka"
 FLAG_PLATON_TSV = "platon"
-FLAG_OUT = "out"
 
 
 def make_parser():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(make_flag(FLAG_SHORT_READS_COV_DIR), required=True)
-    parser.add_argument(make_flag(FLAG_LONG_READS_COV_DIR), required=True)
-    parser.add_argument(make_flag(FLAG_QUAST_DIR), required=True)
-    parser.add_argument(make_flag(FLAG_PROKKA_TXT), required=True)
+    parser = make_base_parser()
     parser.add_argument(make_flag(FLAG_PLATON_TSV), required=True)
-    parser.add_argument(make_flag(FLAG_OUT), required=True)
     return parser
 
 
