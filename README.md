@@ -20,23 +20,25 @@ _Note: Name of Nextflow process is written in parenthesis._
 1. Form an initial assembly using the long reads with Flye (`flyeAssembly`)
 1. Polish the assembly using the long reads with Racon (`raconPolish`)
    - Racon is run up to 4 times or until there are no changes.
-1. Circularise the assembly using Circlator (`circularise`)
-   - In addition to the assembly, Circlator takes in the long reads as input. We use long reads corrected using Canu as input (`canuCorrect`).
+1. If the genome is circular according to Flye, then circularise the assembly using Circlator (`circlator`)
+   - In addition to the assembly, Circlator requires long reads as input. We use long reads corrected using Canu (`canuCorrect`).
 1. Polish the assembly using Pilon (`pilonPolish`)
    - Pilon is run up to 6 times or until there are no changes.
 
 ### Assembly evaluation
+
+Evaluation is done separately for chromosomes and plasmids.
 
 **Metrics recorded:**
 
 - Coverage of short reads and long reads (`shortReadsCoverage`, `longReadsCoverage`)
 - Annotations using Prokka (`prokkaAnnotate`)
 - Statistics about the assembly itself eg. length, number of contigs, N50 using Quast (`quastEvaluate`)
-- Completeness and contamination using CheckM (`checkmEvaluate`)
+- (chromosome only) Completeness and contamination using CheckM (`checkmEvaluate`)
 
 **Summary document:**
 
-The most important statistics are also saved to a single summary document, `summary.json` (`makeSummary`):
+The most important statistics are also saved to a single summary document, `chromosome-summary.json` or `plasmid-summary.json` (`makeChromosomeSummary`, `makePlasmidSummary`):
 
 ```
 {
@@ -68,6 +70,32 @@ The most important statistics are also saved to a single summary document, `summ
 
 Note that `errors` refers to any errors encountered while creating the summary document (does not include the errors when running quast/prokka etc.)
 
+## Output files
+
+Every process will create a separate folder which contain:
+
+- The process's output eg. fasta files.
+- `nextflow.command.sh`: the script run by Nextflow.
+- `nextflow.command.log`: the scripts's stderr and stdout.
+- `nextflow.exitcode`: the script's exit code.
+
+The name and location of the folder for each process is determined by the `params.outdir` and `params.o...` (eg. `params.o.cleanShortReads`) parameters defined at the top of `main.nf`.
+
+Several reports are also generated inside the directory that nextflow was started from (ie. the current directory when `nextflow run ...` was issued):
+- `nextflow-report.html`: a comprehensive summary of the pipeline ([Example](https://www.nextflow.io/docs/latest/tracing.html#execution-report))
+- `nextflow-timeline.html`: a timeline showing the duration of each process. ([Example](https://www.nextflow.io/docs/latest/tracing.html#timeline-report))
+- `nextflow-trace.tsv`: a table of information about each process. ([Example](https://www.nextflow.io/docs/latest/tracing.html#trace-report))
+
+Note: if there are existing reports in the current directory, the existing reports will get renamed to `nextflow-report.html.1`, `nextflow-report.html.2` etc.
+
+**(TODO) Nextflow's working directory (workDir):**
+
+Nextflow stores temporary data in a working directory.
+This will basically includes all of the files mentioned above and possibly additional intermediate files.
+This can be safely deleted after the pipeline finishes running.
+See more at: https://www.nextflow.io/docs/latest/script.html?highlight=workdir#implicit-variables
+
+
 ## Setup
 
 1. Create the conda environments from yaml files in the `conda-envs` directory
@@ -82,7 +110,7 @@ Note that `errors` refers to any errors encountered while creating the summary d
        1. Tell Checkm where the database is:
           ```sh
           conda activate urops-checkm
-          checkm data setRoot <path_to_platon_database>
+          checkm data setRoot <path_to_checkm_database>
           ```
 1. Install [Nextflow](https://www.nextflow.io). It has been tested using v20.10 so far (latest stable release as of time of writing).
 
@@ -123,35 +151,8 @@ mpirun --pernode nextflow run main.nf -profile nscc -with-mpi
 
 `nextflow run main.nf -profile nscc` (if running on the NSCC server) or `nextflow run main.nf -profile local` (if running on desktop).
 
-## Output files
-
-Every process will create a separate folder which contain:
-
-- The process's output eg. fasta files.
-- `nextflow.command.sh`: the script run by Nextflow.
-- `nextflow.command.log`: the scripts's stderr and stdout.
-- `nextflow.exitcode`: the script's exit code.
-
-The name and location of the folder for each process is determined by the `params.outdir` and `params.o...` (eg. `params.o.cleanShortReads`) parameters defined at the top of `main.nf`.
-
-Several reports are also generated inside the directory that nextflow was started from (ie. the current directory when `nextflow run ...` was issued):
-- `nextflow-report.html`: a comprehensive summary of the pipeline ([Example](https://www.nextflow.io/docs/latest/tracing.html#execution-report))
-- `nextflow-timeline.html`: a timeline showing the duration of each process. ([Example](https://www.nextflow.io/docs/latest/tracing.html#timeline-report))
-- `nextflow-trace.tsv`: a table of information about each process. ([Example](https://www.nextflow.io/docs/latest/tracing.html#trace-report))
-
-Note: if there are existing reports in the current directory, the existing reports will get renamed to `nextflow-report.html.1`, `nextflow-report.html.2` etc.
-
-**Nextflow's working directory (workDir):**
-
-TODO
-
-Nextflow stores temporary data in a working directory.
-This will basically includes all of the files mentioned above and possibly additional intermediate files.
-This can be safely deleted after the pipeline finishes running.
-See more at: https://www.nextflow.io/docs/latest/script.html?highlight=workdir#implicit-variables
-
+## TODO debugging
 TODO:
-- Work dir, deleting work dir
 - Debugging using report, `-resume`
 
 ## Understanding the effect of each assembly step
