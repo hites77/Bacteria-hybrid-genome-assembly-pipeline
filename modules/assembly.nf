@@ -10,8 +10,9 @@ params.pilonMaxIters = 6
 params.raconMaxIters = 4
 
 // args for bin/bbduk_keep_percent.py
-params.bbduk_keep_percent = 80
-params.bbduk_start_trimq = 40
+params.bbdukKeepPercent = 80
+params.bbdukStartTrimq = 40
+params.bbdukArgs = 'qtrim=rl minlength=40'
 
 outdirs = {}
 outdirs.cleanShortReads = 'reads/short_cleaned/'
@@ -47,7 +48,7 @@ process cleanShortReads {
             --in1 $illumina1Fq --in2=$illumina2Fq \
             --out1 ${outdirs.cleanShortReads}/illumina1.fq --out2 ${outdirs.cleanShortReads}/illumina2.fq \
             --infodir ${outdirs.cleanShortReads} \
-            --keep_percent ${params.bbduk_keep_percent} --start_trimq ${params.bbduk_start_trimq} --args qtrim=rl minlength=40
+            --keep_percent $params.bbdukKeepPercent --start_trimq $params.bbdukStartTrimq --args $params.bbdukArgs
     """
 }
 
@@ -307,5 +308,4 @@ workflow assembleGenome {
     cleanedLongReads = cleanedLong
     circularitySummary = circularitySummary
     platonTsv = separateChromosomesAndPlasmids.out.platonTsv
-    
 }
