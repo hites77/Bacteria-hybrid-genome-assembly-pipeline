@@ -116,18 +116,9 @@ See more at: https://www.nextflow.io/docs/latest/script.html?highlight=workdir#i
 
 ## Running the pipeline
 
-### 1. Set variables
-
-All parameters which can be adjusted can be found at the top of `main.nf` and in `nextflow.config`. Parameters which are likely to be device specific (eg. number of threads) are defined in profiles in `nextflow.config`.
-
-Recommended variables to adjust: 
-- Device specific parameters (under a profile in `nextflow.config`)
-
-### 2. Start the pipeline
-
 There are a few ways to run the pipeline:
 
-**As a job on the NSCC Aspire 1 server:**
+### (A) As a job on the NSCC Aspire 1 server:
 
 Submit the following job script using `qsub`:
 ``` sh
@@ -144,12 +135,44 @@ module load samtools/1.3
 module load bwa/0.7.13
 
 # cd to the directory containing this repo 
-mpirun --pernode nextflow run main.nf -profile nscc -with-mpi
+mpirun --pernode nextflow run main.nf -profile nscc -with-mpi --rawIllumina1 <path> --rawIllumina2 <path> --rawPacbio <path> --outdir <path> --condaEnvsDir <path>
 ```
 
-**As a local job:**
+Appropriate paths need to be passed to `--rawIllumina1`, `--rawIllumina2`, `--rawPacbio` and `--condaEnvsDir`. See the section [Setting Parameters](#setting-parameters) for more details as well as other parameters which can be set.
 
-`nextflow run main.nf -profile nscc` (if running on the NSCC server) or `nextflow run main.nf -profile local` (if running on desktop).
+### (B) As a local job:
+
+`nextflow run main.nf -profile nscc --rawIllumina1 <path> --rawIllumina2 <path> --rawPacbio <path> --outdir <path> --condaEnvsDir <path>` (if running on the NSCC server) or `nextflow run main.nf -profile local --rawIllumina1 <path> --rawIllumina2 <path> --rawPacbio <path> --outdir <path> --condaEnvsDir` (if running on desktop).
+
+Appropriate paths need to be passed to `--rawIllumina1`, `--rawIllumina2`, `--rawPacbio` and `--condaEnvsDir`. See the section [Setting Parameters](#setting-parameters) for more details as well as other parameters which can be set.
+
+### Setting Parameters
+
+Several parameters can be set as a command line flag, eg. `nextflow run ... --outdir /path/to/somewhere` (see the [Nextflow docs](https://www.nextflow.io/docs/latest/getstarted.html?highlight=params#pipeline-parameters) for more info on how this is implemented). They are listed below:
+
+**Inputs and outputs:**
+
+- `rawIllumina1`: (required) Path to one set of raw Illumina reads. May be fastq or gzipped fastq.
+- `rawIllumina2`: (required) Path to the other set of raw Illumina reads. May be fastq or gzipped fastq.
+- `rawPacbio`: (required) Path to the raw Pacbio reads. May be fastq or gzipped fastq.
+- `outdir`: (required) Path to the output directory, which is where all output files will be stored.
+
+**Execution related:**
+
+- `condaEnvsDir`: (required) Path to where the conda environments are stored. Usually it's `~/.conda/envs/`.
+- `threads`: number of threads a process should use.
+
+**Pipeline parameters:**
+
+- Short read filtering and cleaning using BBDuk:
+    - `bbdukKeepPercent`: ensure at least X% of reads are kept. Default: 80. \*
+    - `bbdukStartTrimq`: highest possible `trimq` value. Default: 40. \*
+    - `bbdukMinTrimq`: lowest permissible `trimq` value. Default: 28. \*
+    - `bbdukArgs`: arguments other than inputs, outputs and `trimq` to pass to bbduk. Default: `qtrim=rl minlength=40`.
+    - \* : You may have noticed that these aren't arguments that are part of bbduk. They're part of a script which helps finds the best possible `trimq` value to use with bbduk such that at least X% of reads are kept, similar to Filtlong. ([here](https://github.com/chloelee767/assembly-pipeline/blob/master/bin/bbduk_keep_percent.py))
+- `pilonMaxIters`: maximum number of iterations to run Pilon for. Default: 6.
+- `raconMaxIters`: maximum number of iterations to run Racon for. Default: 4.
+
 
 ## TODO debugging
 TODO:

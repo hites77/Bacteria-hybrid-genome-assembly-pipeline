@@ -12,6 +12,7 @@ params.raconMaxIters = 4
 // args for bin/bbduk_keep_percent.py
 params.bbdukKeepPercent = 80
 params.bbdukStartTrimq = 40
+params.bbdukMinTrimq = 28
 params.bbdukArgs = 'qtrim=rl minlength=40'
 
 outdirs = {}
@@ -48,7 +49,8 @@ process cleanShortReads {
             --in1 $illumina1Fq --in2=$illumina2Fq \
             --out1 ${outdirs.cleanShortReads}/illumina1.fq --out2 ${outdirs.cleanShortReads}/illumina2.fq \
             --infodir ${outdirs.cleanShortReads} \
-            --keep_percent $params.bbdukKeepPercent --start_trimq $params.bbdukStartTrimq --args $params.bbdukArgs
+            --keep_percent $params.bbdukKeepPercent --start_trimq $params.bbdukStartTrimq \
+            --min_trimq $params.bbdukMinTrimq --args $params.bbdukArgs
     """
 }
 
