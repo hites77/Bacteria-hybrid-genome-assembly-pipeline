@@ -138,6 +138,7 @@ process canuCorrect {
     
     input:
     path pacbioFq
+    path assemblyFa
     
     output:
     path '.command.sh'
@@ -150,8 +151,11 @@ process canuCorrect {
     path outdirs.canuCorrect + 'canu-logs/**'
 
     script:
+    genomeSize = params.canuGenomeSize == null ?
+        "\$(seq_length.py $assemblyFa | bases_to_string.py -)"
+        : params.canuGenomeSize.toString()
     """
-    canu -correct -p canu -d ${outdirs.canuCorrect} genomeSize=$params.canuGenomeSize -pacbio $pacbioFq useGrid=false
+    canu -correct -p canu -d $outdirs.canuCorrect genomeSize=$genomeSize -pacbio $pacbioFq useGrid=false
     """
 }
 
@@ -267,7 +271,7 @@ workflow circulariseAssembly {
     longReads
     
     main:
-    canuCorrect(longReads)
+    canuCorrect(longReads, assembly)
     circlator(assembly, canuCorrect.out.pacbioFa)
 
     emit:
