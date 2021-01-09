@@ -172,6 +172,7 @@ Several parameters can be set as a command line flag, eg. `nextflow run ... --ou
     - \* : You may have noticed that these aren't arguments that are part of bbduk. They're part of a script which helps finds the best possible `trimq` value to use with bbduk such that at least X% of reads are kept, similar to Filtlong. ([here](https://github.com/chloelee767/assembly-pipeline/blob/master/bin/bbduk_keep_percent.py))
 - `pilonMaxIters`: maximum number of iterations to run Pilon for. Default: 6.
 - `raconMaxIters`: maximum number of iterations to run Racon for. Default: 4.
+- `canuGenomeSize`: Default: 5m.
 
 
 ## TODO debugging

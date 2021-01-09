@@ -15,6 +15,8 @@ params.bbdukStartTrimq = 40
 params.bbdukMinTrimq = 28
 params.bbdukArgs = 'qtrim=rl minlength=40'
 
+params.canuGenomeSize = '5m'
+
 outdirs = {}
 outdirs.cleanShortReads = 'reads/short_cleaned/'
 outdirs.cleanLongReads = 'reads/long_cleaned/'
@@ -92,8 +94,12 @@ process flyeAssembly {
     path '.command.log'
     path '.exitcode'
     path outdirs.flyeAssembly + 'assembly.fasta', emit: assemblyFa
-    path outdirs.flyeAssembly + '*', emit: allFiles
-    path 'any_circular_contigs.txt', emit: anyCircularFile
+    path outdirs.flyeAssembly + 'any_circular_contigs.txt', emit: anyCircularFile
+    path outdirs.flyeAssembly + '22-plasmids/**'
+    path outdirs.flyeAssembly + 'flye.log'
+    path outdirs.flyeAssembly + 'assembly_graph.*'
+    path outdirs.flyeAssembly + 'assembly_info.txt'
+    path outdirs.flyeAssembly + 'params.json'
 
     script:
     """
@@ -138,11 +144,14 @@ process canuCorrect {
     path '.command.log'
     path '.exitcode'
     path outdirs.canuCorrect + 'canu.correctedReads.fasta.gz', emit: pacbioFa
-    path outdirs.canuCorrect + 'canu*', emit: allFiles
+    path outdirs.canuCorrect + 'canu.report'
+    path outdirs.canuCorrect + 'canu.seqStore.err'
+    path outdirs.canuCorrect + 'canu.seqStore.sh'
+    path outdirs.canuCorrect + 'canu-logs/**'
 
     script:
     """
-    canu -correct -p canu -d ${outdirs.canuCorrect} genomeSize=5m -pacbio $pacbioFq useGrid=false
+    canu -correct -p canu -d ${outdirs.canuCorrect} genomeSize=$params.canuGenomeSize -pacbio $pacbioFq useGrid=false
     """
 }
 
@@ -160,8 +169,10 @@ process circlator {
     path '.command.log'
     path '.exitcode'
     path outdirs.circlator + '06.fixstart.fasta', emit: assemblyFa
-    path outdirs.circlator + '*', emit: allFiles
-    path 'circularity_summary.json', emit: circularitySummary
+    path outdirs.circlator + 'circularity_summary.json', emit: circularitySummary
+    path outdirs.circlator + '*.log'
+    path outdirs.circlator + '*.txt'
+    path outdirs.circlator + '*.coords'
 
     script:
     """
@@ -189,13 +200,14 @@ process pilonPolish {
     path '.command.sh'
     path '.command.log'
     path '.exitcode'
-    path 'final_assembly.fasta', emit: assemblyFa
+    path 'final_pilon_assembly.fa', emit: assemblyFa
     path 'pilon*.changes'
     path 'pilon_info.tsv'
 
     script:
     """
-    run_pilon.py --assembly $assemblyFa --reads1 $illumina1Fq --reads2 $illumina2Fq --out final_assembly.fasta \
+    run_pilon.py --assembly $assemblyFa --reads1 $illumina1Fq --reads2 $illumina2Fq \
+                --out final_pilon_assembly.fa \
                 --maxiters $params.pilonMaxIters --threads $params.threads
     """
 }
@@ -214,9 +226,9 @@ process separateChromosomesAndPlasmids {
     path '.command.log'
     path '.exitcode'
     path 'assembly.chromosome.fasta', emit: chromosomeFa
-    path 'assembly.plasmid.fasta' ,optional: true, emit: plasmidFa
-    path 'assembly.tsv' ,optional: true, emit: platonTsv
-    path 'assembly.json' ,optional: true, emit: platonJson
+    path 'assembly.plasmid.fasta', optional: true, emit: plasmidFa
+    path 'assembly.tsv', optional: true, emit: platonTsv
+    path 'assembly.json', optional: true, emit: platonJson
 
     script:
     """
@@ -236,8 +248,8 @@ process splitByCircularity {
     path anyCircularFile
 
     output:
-    path 'circular-assembly.fa' ,optional: true, emit: circularAssembly
-    path 'linear-assembly.fa' ,optional: true, emit: linearAssembly 
+    path 'circular-assembly.fa', optional: true, emit: circularAssembly
+    path 'linear-assembly.fa', optional: true, emit: linearAssembly 
 
     script:
     """
@@ -301,7 +313,8 @@ workflow assembleGenome {
     circularitySummary = circulariseAssembly.out.circularitySummary.mix(makeLinearAssemblyCircSummary.out.circularitySummary)
 
     pilonPolish(assembly, cleanedShort1, cleanedShort2)
-    separateChromosomesAndPlasmids(pilonPolish.out.assemblyFa, mapToDirectory(flyeAssembly.out.allFiles))
+    separateChromosomesAndPlasmids(pilonPolish.out.assemblyFa,
+                                   flyeAssembly.out.assemblyFa.map{ file(it.parent) }) // HACK flye directory
 
     emit:
     chromosomeFa = separateChromosomesAndPlasmids.out.chromosomeFa
