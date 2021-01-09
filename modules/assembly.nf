@@ -2,21 +2,6 @@ nextflow.enable.dsl=2
 
 include { getDirectory; mapToDirectory } from './commons.nf'
 
-params.outdir = 'genome-assembly/'
-
-// maximum number of iterations to run pilon for
-params.pilonMaxIters = 6
-// maximum number of iterations to run racon for
-params.raconMaxIters = 4
-
-// args for bin/bbduk_keep_percent.py
-params.bbdukKeepPercent = 80
-params.bbdukStartTrimq = 40
-params.bbdukMinTrimq = 28
-params.bbdukArgs = 'qtrim=rl minlength=40'
-
-params.canuGenomeSize = '5m'
-
 outdirs = {}
 outdirs.cleanShortReads = 'reads/short_cleaned/'
 outdirs.cleanLongReads = 'reads/long_cleaned/'
@@ -50,9 +35,9 @@ process cleanShortReads {
     bbduk_keep_percent.py \
             --in1 $illumina1Fq --in2=$illumina2Fq \
             --out1 ${outdirs.cleanShortReads}/illumina1.fq --out2 ${outdirs.cleanShortReads}/illumina2.fq \
-            --infodir ${outdirs.cleanShortReads} \
-            --keep_percent $params.bbdukKeepPercent --start_trimq $params.bbdukStartTrimq \
-            --min_trimq $params.bbdukMinTrimq --args $params.bbdukArgs
+            --infodir $outdirs.cleanShortReads \
+            --keep_percent $params.shortReadsKeepPercent --start_trimq $params.shortReadsStartTrimq \
+            --min_trimq $params.shortReadsMinTrimq --args $params.bbdukArgs
     """
 }
 
@@ -235,15 +220,20 @@ process separateChromosomesAndPlasmids {
     path 'assembly.json', optional: true, emit: platonJson
 
     script:
-    """
-    if [ -s $flyeDir/22-plasmids/plasmids_raw.fasta ] ; then
-        echo plasmids present
-        platon -p assembly -t $params.threads $assemblyFa -d \$PLATONDB
-    else
-        echo plasmids absent
-        ln -s $assemblyFa assembly.chromosome.fasta
-    fi
-    """
+    platonCmd = "platon -p assembly -t $params.threads $assemblyFa -d \$PLATONDB"
+    if (params.forcePlaton) {
+        """$platonCmd"""
+    } else {
+        """
+        if [ -s $flyeDir/22-plasmids/plasmids_raw.fasta ] ; then
+            echo plasmids present
+            $platonCmd
+        else
+            echo plasmids absent
+            ln -s $assemblyFa assembly.chromosome.fasta
+        fi
+        """
+    }
 }
 
 process splitByCircularity {

@@ -13,9 +13,9 @@ include { evaluateChromosome; evaluatePlasmid } from './modules/evaluation.nf'
 // TODO Extract out env names?
 
 workflow full {
-    rawIllumina1Fq = params.rawIllumina1
-    rawIllumina2Fq = params.rawIllumina2
-    rawPacbioFq = params.rawPacbio
+    rawIllumina1Fq = params.illumina1
+    rawIllumina2Fq = params.illumina2
+    rawPacbioFq = params.pacbio
 
     assembleGenome(rawIllumina1Fq, rawIllumina2Fq, rawPacbioFq)
     evaluateChromosome(

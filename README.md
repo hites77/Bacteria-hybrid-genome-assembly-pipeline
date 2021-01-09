@@ -24,6 +24,7 @@ _Note: Name of Nextflow process is written in parenthesis._
    - In addition to the assembly, Circlator requires long reads as input. We use long reads corrected using Canu (`canuCorrect`).
 1. Polish the assembly using Pilon (`pilonPolish`)
    - Pilon is run up to 6 times or until there are no changes.
+1. If Flye has detected plasmids, run platon to separate the chromosomes and plasmids (`separateChromosomesAndPlasmids`)
 
 ### Assembly evaluation
 
@@ -148,31 +149,31 @@ Appropriate paths need to be passed to `--rawIllumina1`, `--rawIllumina2`, `--ra
 
 ### Setting Parameters
 
-Several parameters can be set as a command line flag, eg. `nextflow run ... --outdir /path/to/somewhere` (see the [Nextflow docs](https://www.nextflow.io/docs/latest/getstarted.html?highlight=params#pipeline-parameters) for more info on how this is implemented). They are listed below:
+Several parameters can be set as a command line flag, eg. `nextflow run ... --outdir /path/to/somewhere` or `nextflow run ... --forcePlaton`. They are listed below:
 
 **Inputs and outputs:**
 
-- `rawIllumina1`: (required) Path to one set of raw Illumina reads. May be fastq or gzipped fastq.
-- `rawIllumina2`: (required) Path to the other set of raw Illumina reads. May be fastq or gzipped fastq.
-- `rawPacbio`: (required) Path to the raw Pacbio reads. May be fastq or gzipped fastq.
-- `outdir`: (required) Path to the output directory, which is where all output files will be stored.
+- `--illumina1 <path>`: (required) Path to one set of raw Illumina reads. May be fastq or gzipped fastq.
+- `--illumina2 <path>`: (required) Path to the other set of raw Illumina reads. May be fastq or gzipped fastq.
+- `--pacbio <path>`: (required) Path to the raw Pacbio reads. May be fastq or gzipped fastq.
+- `--outdir <path>`: Path to the output directory, which is where all output files will be stored.
 
 **Execution related:**
 
-- `condaEnvsDir`: (required) Path to where the conda environments are stored. Usually it's `~/.conda/envs/`.
-- `threads`: number of threads a process should use.
+- `--condaEnvsDir <path>`: Path to where the conda environments are stored. Default: `~/.conda/envs/`.
+- `--threads <num threads>`: Number of threads a process should use.
 
 **Pipeline parameters:**
 
-- Short read filtering and cleaning using BBDuk:
-    - `bbdukKeepPercent`: ensure at least X% of reads are kept. Default: 80. \*
-    - `bbdukStartTrimq`: highest possible `trimq` value. Default: 40. \*
-    - `bbdukMinTrimq`: lowest permissible `trimq` value. Default: 28. \*
-    - `bbdukArgs`: arguments other than inputs, outputs and `trimq` to pass to bbduk. Default: `qtrim=rl minlength=40`.
-    - \* : You may have noticed that these aren't arguments that are part of bbduk. They're part of a script which helps finds the best possible `trimq` value to use with bbduk such that at least X% of reads are kept, similar to Filtlong. ([here](https://github.com/chloelee767/assembly-pipeline/blob/master/bin/bbduk_keep_percent.py))
-- `pilonMaxIters`: maximum number of iterations to run Pilon for. Default: 6.
-- `raconMaxIters`: maximum number of iterations to run Racon for. Default: 4.
-- `canuGenomeSize`: Default: 5m.
+- Short read filtering and cleaning:
+    - `--shortReadsKeepPercent <percent>`: Ensure at least X% of reads are kept. Default: 80.
+    - `--shortReadsStartTrimq <trimq>`: Highest possible `trimq` value for bbduk. Default: 40.
+    - `--shortReadsMinTrimq <trimq>`: Lowest permissible `trimq` value for bbduk. Default: 28.
+    - `--bbdukArgs <args>`: Arguments other than inputs, outputs and `trimq` to pass to bbduk. Default: `qtrim=rl minlength=40`.
+- `--pilonMaxIters <number>`: Maximum number of iterations to run Pilon for. Default: 6.
+- `--raconMaxIters <number>`: Maximum number of iterations to run Racon for. Default: 4.
+- `--canuGenomeSize <genome size>`: When specified, force Canu to use this genome size. See the Canu documentation for genomeSize for valid values. Otherwise, calculate the genome size from the assembly. Default: not specified.
+- `--forcePlaton`: Force the pipeline to run Platon on the assembly even if Flye does not detect any plasmids.
 
 
 ## TODO debugging

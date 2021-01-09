@@ -2,8 +2,6 @@ nextflow.enable.dsl=2
 
 include { getDirectory; mapToDirectory } from './commons.nf'
 
-params.outdir = 'genome-assembly/'
-
 // output directories for each process relative to params.outdir
 outdirs = {}
 
