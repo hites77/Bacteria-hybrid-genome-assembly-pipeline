@@ -99,7 +99,7 @@ process flyeAssembly {
     """
     mkdir -p ${outdirs.flyeAssembly} # flye can only create 1 dir
     flye --plasmids --threads $params.threads --pacbio-raw $pacbioFq -o ${outdirs.flyeAssembly}
-    flye_circularity.py ${outdirs.flyeAssembly} > 'any_circular_contigs.txt'
+    flye_circularity.py ${outdirs.flyeAssembly} > ${outdirs.flyeAssembly}/any_circular_contigs.txt
     """
 }
 
@@ -165,11 +165,12 @@ process circlator {
 
     script:
     """
+    mkdir -p ${outdirs.circlator}
+
     # circlator can't handle nested directories
     circlator all $assemblyFa $pacbioFa circlator-temp
-    circlator_circularity_summary.py circlator-temp > circularity_summary.json
+    circlator_circularity_summary.py circlator-temp > ${outdirs.circlator}/circularity_summary.json
 
-    mkdir -p ${outdirs.circlator}
     mv circlator-temp/* ${outdirs.circlator}
     """
 }

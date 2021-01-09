@@ -17,7 +17,7 @@ outdirs.quastEvaluate = 'quast/'
 outdirs.checkmEvaluate = 'checkm/'
 
 process shortReadsCoverage {
-    publishDir params.outdir + outdirs.shortReadsCoverage, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
+    publishDir "${params.outdir}/${pubDirPrefix}/${outdirs.shortReadsCoverage}" , mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
     publishDir "${params.outdir}/${pubDirPrefix}/${outdirs.shortReadsCoverage}" , mode: 'copy'
     conda params.condaEnvsDir + 'urops-assembly'
     
@@ -44,7 +44,7 @@ process shortReadsCoverage {
 }
 
 process longReadsCoverage {
-    publishDir params.outdir + outdirs.longReadsCoverage, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
+    publishDir "${params.outdir}/${pubDirPrefix}/${outdirs.longReadsCoverage}", mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
     publishDir "${params.outdir}/${pubDirPrefix}/${outdirs.longReadsCoverage}", mode: 'copy'
     conda params.condaEnvsDir + 'urops-assembly'
     
@@ -70,8 +70,8 @@ process longReadsCoverage {
 }
 
 process prokkaAnnotate {
-    publishDir params.outdir + outdirs.prokkaAnnotate, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
-    publishDir "${params.outdir}/${pubDirPrefix}/${outdirs.prokkaAnnotate}", mode: 'copy'
+    publishDir "${params.outdir}/${pubDirPrefix}/${outdirs.prokkaAnnotate}", mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
+    publishDir "${params.outdir}/${pubDirPrefix}", mode: 'copy'
     conda params.condaEnvsDir + 'urops-assembly'
 
     input:
@@ -93,8 +93,8 @@ process prokkaAnnotate {
 }
 
 process quastEvaluate {
-    publishDir params.outdir + outdirs.quastEvaluate, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
-    publishDir "${params.outdir}/${pubDirPrefix}/${outdirs.quastEvaluate}", mode: 'copy'
+    publishDir "${params.outdir}/${pubDirPrefix}/${outdirs.quastEvaluate}", mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
+    publishDir "${params.outdir}/${pubDirPrefix}", mode: 'copy'
     conda params.condaEnvsDir + 'urops-assembly'
     
     input:
@@ -115,8 +115,8 @@ process quastEvaluate {
 }
 
 process checkmEvaluate {
-    publishDir params.outdir + outdirs.checkmEvaluate, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
-    publishDir "${params.outdir}/${pubDirPrefix}/${outdirs.checkmEvaluate}", mode: 'copy'
+    publishDir "${params.outdir}/${pubDirPrefix}/${outdirs.checkmEvaluate}", mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
+    publishDir "${params.outdir}/${pubDirPrefix}", mode: 'copy'
     conda params.condaEnvsDir + 'urops-checkm'
     
     input:

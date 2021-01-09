@@ -83,14 +83,26 @@ def average_coverage_internal(stats_txt_df):
         stats_txt_df: pd.read_table('stats.txt')
 
     Returns:
-        The average fold coverage as a float.
+        A dict of contig name to average coverage eg.
+        { 'contig_1' : 163.6878 }
 
     Raises:
-        ValueError: The dataframe does not have exactly 1 row.
+        ValueError: The dataframe has less than 1 row.
     """
-    if len(stats_txt_df) != 1:
-        raise ValueError(f"Dataframe should have 1 row.\nNumber of rows: {len(stats_txt_df)}")
-    return float(stats_txt_df["Avg_fold"][0])
+    if len(stats_txt_df) < 1:
+        raise ValueError(
+            f"Dataframe should have at least 1 row.\nNumber of rows: {len(stats_txt_df)}"
+        )
+    result = {}
+    for row in stats_txt_df.itertuples():
+        row = row._asdict()
+        try:
+            contig = str(row["_1"])
+        except KeyError:
+            contig = str(row["#ID"])
+        coverage = float(row["Avg_fold"])
+        result[contig] = coverage
+    return result
 
 
 def reads_mapped(stderr_path):
@@ -107,6 +119,7 @@ def average_coverage(stats_txt_path):
     Returns:
         The average fold coverage as a float.
     """
+    print(pd.read_table(stats_txt_path))
     return average_coverage_internal(pd.read_table(stats_txt_path))
 
 
