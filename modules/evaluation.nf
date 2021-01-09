@@ -160,7 +160,7 @@ process makeChromosomeSummary {
         --quast $quastDir \
         --prokka $prokkaTxt \
         --circularity $circularitySummary \
-        --assembly $assemblyFa \
+        --fasta $assemblyFa \
         --checkm $checkmDir \
         --out chromosome-summary.json
     """
@@ -176,6 +176,7 @@ process makePlasmidSummary {
     path quastDir
     path prokkaTxt
     path platonDir
+    path plasmidFa
     
     output:
     path 'plasmid-summary.json'
@@ -186,7 +187,9 @@ process makePlasmidSummary {
         --long $longReadsCoverageDir \
         --quast $quastDir \
         --prokka $prokkaTxt \
-        --platon $platonDir
+        --platon $platonDir \
+        --fasta $plasmidFa
+        --out plasmid-summary.json
     """
 }
 
@@ -233,6 +236,7 @@ workflow evaluatePlasmid {
         longReadsCoverage.out.stats.map { file(it.parent) }, // HACK
         mapToDirectory(quastEvaluate.out.allFiles),
         prokkaAnnotate.out.txt,
-        platonTsv
+        platonTsv,
+        assembly
     )
 }

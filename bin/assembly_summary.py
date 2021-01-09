@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-# TODO: add support for plasmids
-
 import argparse
 import json
 import sys
@@ -9,6 +7,7 @@ from pathlib import Path
 
 import platon_stats
 from alignment_stats import average_coverage, reads_mapped
+from Bio import SeqIO
 from cds import cds
 from checkm_stats import checkm_stats
 from commons import make_flag
@@ -23,6 +22,7 @@ KEY_SHORT_READS_MAPPED = "short reads mapped"
 KEY_LONG_READS_MAPPED = "long reads mapped"
 KEY_CDS = "CDS"
 KEY_CIRCULARITY = "circularity"
+KEY_LENGTH_BY_CONTIG = "size by contig"
 
 ### FUNCTIONS ###
 
@@ -64,13 +64,57 @@ def filtered_circularity_sumary(circularity_summary, contigs):
         )
 
 
+def length_per_contig(fasta_file):
+    records = SeqIO.parse(fasta_file, "fasta")
+    return {rec.id: len(rec) for rec in records}
+
+
+def make_common_summary(
+    short_reads_coverage_dir,
+    long_reads_coverage_dir,
+    quast_dir,
+    prokka_txt,
+    fasta_file,
+):
+    results = {}
+    error_list = []
+
+    assign_to_dict = make_assigner(results, error_list)
+
+    short_reads_coverage_dir = Path(short_reads_coverage_dir)
+    long_reads_coverage_dir = Path(long_reads_coverage_dir)
+
+    assign_to_dict(
+        KEY_AVERAGE_SHORT_READS_COVERAGE,
+        lambda: average_coverage(short_reads_coverage_dir / "stats.txt"),
+    )
+    assign_to_dict(
+        KEY_SHORT_READS_MAPPED,
+        lambda: reads_mapped(short_reads_coverage_dir / "bbmap_stderr.txt"),
+    )
+    assign_to_dict(
+        KEY_AVERAGE_LONG_READS_COVERAGE,
+        lambda: average_coverage(long_reads_coverage_dir / "stats.txt"),
+    )
+    assign_to_dict(
+        KEY_LONG_READS_MAPPED,
+        lambda: reads_mapped(long_reads_coverage_dir / "pileup_stderr.txt"),
+    )
+    assign_to_dict("quast", lambda: quast_stats(quast_dir), update=True)
+    assign_to_dict(KEY_CDS, lambda: cds(prokka_txt))
+    assign_to_dict(KEY_LENGTH_BY_CONTIG, lambda: length_per_contig(fasta_file))
+
+    results["errors"] = error_list
+    return results
+
+
 def make_chromosome_summary(
     short_reads_coverage_dir,
     long_reads_coverage_dir,
     quast_dir,
     prokka_txt,
     circularity_summary,
-    assembly,
+    fasta_file,
     checkm_dir,
 ):
     """
@@ -83,41 +127,22 @@ def make_chromosome_summary(
         A dictionary containing useful summary values about the genome assembly.
         Any errors encoutered are stored under they key \"error\".
     """
-    results = {}
-    error_list = []
-
+    results = make_common_summary(
+        short_reads_coverage_dir=short_reads_coverage_dir,
+        long_reads_coverage_dir=long_reads_coverage_dir,
+        quast_dir=quast_dir,
+        prokka_txt=prokka_txt,
+        fasta_file=fasta_file,
+    )
+    error_list = results["errors"]
     assign_to_dict = make_assigner(results, error_list)
-
-    short_reads_coverage_dir = Path(short_reads_coverage_dir)
-    long_reads_coverage_dir = Path(long_reads_coverage_dir)
-
-    assign_to_dict(
-        KEY_AVERAGE_SHORT_READS_COVERAGE,
-        lambda: average_coverage(short_reads_coverage_dir / "stats.txt"),
-    )
-    assign_to_dict(
-        KEY_SHORT_READS_MAPPED,
-        lambda: reads_mapped(short_reads_coverage_dir / "bbmap_stderr.txt"),
-    )
-    assign_to_dict(
-        KEY_AVERAGE_LONG_READS_COVERAGE,
-        lambda: average_coverage(long_reads_coverage_dir / "stats.txt"),
-    )
-    assign_to_dict(
-        KEY_LONG_READS_MAPPED,
-        lambda: reads_mapped(long_reads_coverage_dir / "pileup_stderr.txt"),
-    )
-    assign_to_dict("quast", lambda: quast_stats(quast_dir), update=True)
-    assign_to_dict(KEY_CDS, lambda: cds(prokka_txt))
     assign_to_dict(
         KEY_CIRCULARITY,
         lambda: filtered_circularity_sumary(
-            circularity_summary, contigs=get_contig_names(assembly)
+            circularity_summary, contigs=get_contig_names(fasta_file)
         ),
     )
     assign_to_dict("checkm", lambda: checkm_stats(checkm_dir), update=True)
-
-    results["errors"] = error_list
 
     if error_list:
         print("Errors:\n", error_list, file=sys.stderr)
@@ -130,37 +155,19 @@ def make_plasmid_summary(
     long_reads_coverage_dir,
     quast_dir,
     prokka_txt,
+    fasta_file,
     platon_tsv,
 ):
-    results = {}
-    error_list = []
-
+    results = make_common_summary(
+        short_reads_coverage_dir=short_reads_coverage_dir,
+        long_reads_coverage_dir=long_reads_coverage_dir,
+        quast_dir=quast_dir,
+        prokka_txt=prokka_txt,
+        fasta_file=fasta_file,
+    )
+    error_list = results["errors"]
     assign_to_dict = make_assigner(results, error_list)
-
-    short_reads_coverage_dir = Path(short_reads_coverage_dir)
-    long_reads_coverage_dir = Path(long_reads_coverage_dir)
-
-    assign_to_dict(
-        KEY_AVERAGE_SHORT_READS_COVERAGE,
-        lambda: average_coverage(short_reads_coverage_dir / "stats.txt"),
-    )
-    assign_to_dict(
-        KEY_SHORT_READS_MAPPED,
-        lambda: reads_mapped(short_reads_coverage_dir / "bbmap_stderr.txt"),
-    )
-    assign_to_dict(
-        KEY_AVERAGE_LONG_READS_COVERAGE,
-        lambda: average_coverage(long_reads_coverage_dir / "stats.txt"),
-    )
-    assign_to_dict(
-        KEY_LONG_READS_MAPPED,
-        lambda: reads_mapped(long_reads_coverage_dir / "pileup_stderr.txt"),
-    )
-    assign_to_dict("quast", lambda: quast_stats(quast_dir), update=True)
-    assign_to_dict(KEY_CDS, lambda: cds(prokka_txt))
     assign_to_dict(KEY_CIRCULARITY, lambda: platon_stats.cicularity(platon_tsv))
-
-    results["errors"] = error_list
 
     if error_list:
         print("Errors:\n", error_list, file=sys.stderr)
@@ -170,12 +177,21 @@ def make_plasmid_summary(
 
 ### PARSER ###
 
-# constants
+## constants
+# common
 FLAG_SHORT_READS_COV_DIR = "short"
 FLAG_LONG_READS_COV_DIR = "long"
 FLAG_QUAST_DIR = "quast"
 FLAG_PROKKA_TXT = "prokka"
 FLAG_OUT = "out"
+FLAG_FASTA = "fasta"
+
+# chromosome
+FLAG_CIRCULARITY_SUMMARY = "circularity"
+FLAG_CHECKM_DIR = "checkm"
+
+# plasmid
+FLAG_PLATON_TSV = "platon"
 
 
 def make_base_parser():
@@ -185,4 +201,52 @@ def make_base_parser():
     parser.add_argument(make_flag(FLAG_QUAST_DIR), required=True)
     parser.add_argument(make_flag(FLAG_PROKKA_TXT), required=True)
     parser.add_argument(make_flag(FLAG_OUT), required=True)
+    parser.add_argument(make_flag(FLAG_FASTA), required=True)
     return parser
+
+
+def make_chromosome_parser():
+    parser = make_base_parser()
+    parser.add_argument(make_flag(FLAG_CIRCULARITY_SUMMARY), required=True)
+    parser.add_argument(make_flag(FLAG_CHECKM_DIR), required=True)
+    return parser
+
+
+def make_plasmid_parser():
+    parser = make_base_parser()
+    parser.add_argument(make_flag(FLAG_PLATON_TSV), required=True)
+    return parser
+
+
+### MAIN ###
+
+
+def chromosome_main():
+    parser = make_chromosome_parser()
+    args = vars(parser.parse_args())
+    save_to = args[FLAG_OUT]
+    summary = make_chromosome_summary(
+        short_reads_coverage_dir=args[FLAG_SHORT_READS_COV_DIR],
+        long_reads_coverage_dir=args[FLAG_LONG_READS_COV_DIR],
+        quast_dir=args[FLAG_QUAST_DIR],
+        prokka_txt=args[FLAG_PROKKA_TXT],
+        circularity_summary=args[FLAG_CIRCULARITY_SUMMARY],
+        fasta_file=args[FLAG_FASTA],
+        checkm_dir=args[FLAG_CHECKM_DIR],
+    )
+    json.dump(summary, open(save_to, "w"), indent=4)
+
+
+def plasmid_main():
+    parser = make_plasmid_parser()
+    args = vars(parser.parse_args())
+    save_to = args[FLAG_OUT]
+    summary = make_plasmid_summary(
+        short_reads_coverage_dir=args[FLAG_SHORT_READS_COV_DIR],
+        long_reads_coverage_dir=args[FLAG_LONG_READS_COV_DIR],
+        quast_dir=args[FLAG_QUAST_DIR],
+        prokka_txt=args[FLAG_PROKKA_TXT],
+        platon_tsv=args[FLAG_PLATON_TSV],
+        fasta_file=args[FLAG_FASTA],
+    )
+    json.dump(summary, open(save_to, "w"), indent=4)

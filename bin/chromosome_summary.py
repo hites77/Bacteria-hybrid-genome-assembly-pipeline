@@ -1,42 +1,6 @@
 #!/usr/bin/env python3
 
-import json
-
-from assembly_summary import (
-    FLAG_LONG_READS_COV_DIR,
-    FLAG_OUT,
-    FLAG_PROKKA_TXT,
-    FLAG_QUAST_DIR,
-    FLAG_SHORT_READS_COV_DIR,
-    make_base_parser,
-    make_chromosome_summary,
-)
-from commons import make_flag
-
-FLAG_ASSEMBLY = "assembly"
-FLAG_CIRCULARITY_SUMMARY = "circularity"
-FLAG_CHECKM_DIR = "checkm"
-
-
-def make_parser():
-    parser = make_base_parser()
-    parser.add_argument(make_flag(FLAG_CIRCULARITY_SUMMARY), required=True)
-    parser.add_argument(make_flag(FLAG_ASSEMBLY), required=True)
-    parser.add_argument(make_flag(FLAG_CHECKM_DIR), required=True)
-    return parser
-
+from assembly_summary import chromosome_main
 
 if __name__ == "__main__":
-    parser = make_parser()
-    args = vars(parser.parse_args())
-    summary = make_chromosome_summary(
-        short_reads_coverage_dir=args[FLAG_SHORT_READS_COV_DIR],
-        long_reads_coverage_dir=args[FLAG_LONG_READS_COV_DIR],
-        quast_dir=args[FLAG_QUAST_DIR],
-        prokka_txt=args[FLAG_PROKKA_TXT],
-        circularity_summary=args[FLAG_CIRCULARITY_SUMMARY],
-        assembly=args[FLAG_ASSEMBLY],
-        checkm_dir=args[FLAG_CHECKM_DIR],
-    )
-    save_to = args[FLAG_OUT]
-    json.dump(summary, open(save_to, "w"), indent=4)
+    chromosome_main()
