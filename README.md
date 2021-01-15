@@ -165,6 +165,7 @@ Several parameters can be set as a command line flag, eg. `nextflow run ... --ou
 
 **Pipeline parameters:**
 
+- `--skipDepChecks`: skip dependency checks.
 - Short read filtering and cleaning:
     - `--shortReadsKeepPercent <percent>`: Ensure at least X% of reads are kept. Default: 80.
     - `--shortReadsStartTrimq <trimq>`: Highest possible `trimq` value for bbduk. Default: 40.

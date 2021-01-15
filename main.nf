@@ -2,20 +2,20 @@ nextflow.enable.dsl=2
 
 include { assembleGenome } from './modules/assembly.nf'
 include { evaluateChromosome; evaluatePlasmid } from './modules/evaluation.nf'
-
-
-/// Parameters for specific programs/scripts
+include { checkDependencies } from './modules/dependency_checks.nf'
 
 // TODO validate params
-
-
 // TODO validate: all dirs end with a slash, no spaces
-// TODO Extract out env names?
 
 workflow full {
-    rawIllumina1Fq = params.illumina1
-    rawIllumina2Fq = params.illumina2
-    rawPacbioFq = params.pacbio
+    take:
+    depChecksDone
+    
+    main:
+    // HACK ensure assembly only start when the dependency checks are finished
+    rawIllumina1Fq = depChecksDone.map({ params.illumina1 }) 
+    rawIllumina2Fq = depChecksDone.map({ params.illumina2 })
+    rawPacbioFq = depChecksDone.map({ params.pacbio })
 
     assembleGenome(rawIllumina1Fq, rawIllumina2Fq, rawPacbioFq)
     evaluateChromosome(
@@ -35,5 +35,13 @@ workflow full {
 }
 
 workflow {
-    full()
+    def doneChannel
+    if (params.skipDepChecks) {
+        doneChannel = Channel.of(true)
+    } else {
+        checkDependencies()
+        doneChannel = checkDependencies.out
+    }
+
+    full(doneChannel)
 }
