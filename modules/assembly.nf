@@ -56,6 +56,7 @@ process cleanLongReads {
     path '.command.log'
     path '.exitcode'
     path outdirs.cleanLongReads + 'pacbio.fq', emit: fq
+    path outdirs.cleanLongReads + 'above_10kb_reads_removed.tsv', emit: 10kbRemoved, optional: true
 
     script:
     """
@@ -63,6 +64,8 @@ process cleanLongReads {
     filtlong -1 $illumina1Fq -2 $illumina2Fq \
         --min_length 1000 --keep_percent 90 --trim --split 500 --mean_q_weight 10 \
         $pacbioFq > ${outdirs.cleanLongReads}/pacbio.fq
+    check_long_reads_removed.py --old $pacbioFq --new ${outdirs.cleanLongReads}/pacbio.fq \
+        --threshold 10k --tsv ${outdirs.cleanLongReads}/above_10kb_reads_removed.tsv
     """
 }
 
