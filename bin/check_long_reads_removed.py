@@ -26,8 +26,9 @@ from commons import make_flag, string_to_bases
 
 def open_fastq(fastq_path: str):
     if fastq_path.endswith(".gz"):
-        subprocess.run(f"gzip -dk {fastq_path}", shell=True, check=True)
+        compressed_fastq = fastq_path
         fastq_path = fastq_path[:-3]
+        subprocess.run(f"gzip -dc {compressed_fastq} > {fastq_path}", shell=True, check=True)
     return SeqIO.parse(fastq_path, "fastq")
 
 
