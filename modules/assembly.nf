@@ -10,7 +10,6 @@ outdirs.raconPolish = 'assembly/racon/'
 outdirs.canuCorrect = 'reads/long_canu/'
 outdirs.circlator = 'assembly/circlator/'
 outdirs.pilonPolish = 'assembly/pilon/'
-outdirs.separateChromosomesAndPlasmids = 'assembly/separate/'
 
 process cleanShortReads {
     publishDir params.outdir + outdirs.cleanShortReads, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
@@ -56,7 +55,7 @@ process cleanLongReads {
     path '.command.log'
     path '.exitcode'
     path outdirs.cleanLongReads + 'pacbio.fq', emit: fq
-    path outdirs.cleanLongReads + 'above_10kb_reads_removed.tsv', emit: 10kbRemoved, optional: true
+    path outdirs.cleanLongReads + 'above_10kb_reads_removed.tsv', optional: true
 
     script:
     """
@@ -82,7 +81,6 @@ process flyeAssembly {
     path '.command.log'
     path '.exitcode'
     path outdirs.flyeAssembly + 'assembly.fasta', emit: assemblyFa
-    path outdirs.flyeAssembly + 'any_circular_contigs.txt', emit: anyCircularFile
     path outdirs.flyeAssembly + '22-plasmids/**'
     path outdirs.flyeAssembly + 'flye.log'
     path outdirs.flyeAssembly + 'assembly_graph.*'
@@ -93,7 +91,6 @@ process flyeAssembly {
     """
     mkdir -p ${outdirs.flyeAssembly} # flye can only create 1 dir
     flye --plasmids --threads $params.threads --pacbio-raw $pacbioFq -o ${outdirs.flyeAssembly}
-    flye_circularity.py ${outdirs.flyeAssembly} > ${outdirs.flyeAssembly}/any_circular_contigs.txt
     """
 }
 
@@ -204,83 +201,77 @@ process pilonPolish {
     """
 }
 
-process separateChromosomesAndPlasmids {
-    publishDir params.outdir + outdirs.separateChromosomesAndPlasmids, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
-    publishDir params.outdir + outdirs.separateChromosomesAndPlasmids, mode: 'copy'
-    conda params.condaEnvsDir + 'urops-assembly'
-    
+process shouldCirculariseOrNot {
     input:
     path assemblyFa
-    path flyeDir
-    
-    output:
-    path '.command.sh'
-    path '.command.log'
-    path '.exitcode'
-    path 'assembly.chromosome.fasta', emit: chromosomeFa
-    path 'assembly.plasmid.fasta', optional: true, emit: plasmidFa
-    path 'assembly.tsv', optional: true, emit: platonTsv
-    path 'assembly.json', optional: true, emit: platonJson
-
-    script:
-    platonCmd = "platon -p assembly -t $params.threads $assemblyFa -d \$PLATONDB"
-    if (params.forcePlaton) {
-        """$platonCmd"""
-    } else {
-        """
-        if [ -s $flyeDir/22-plasmids/plasmids_raw.fasta ] ; then
-            echo plasmids present
-            $platonCmd
-        else
-            echo plasmids absent
-            ln -s $assemblyFa assembly.chromosome.fasta
-        fi
-        """
-    }
-}
-
-process splitByCircularity {
-    input:
-    path assemblyFa
-    path anyCircularFile
+    path flyeDirectory
 
     output:
-    path 'circular-assembly.fa', optional: true, emit: circularAssembly
-    path 'linear-assembly.fa', optional: true, emit: linearAssembly 
+    path 'possibly-circular-assembly.fa', optional: true, emit: toCircularise
+    path 'linear-assembly.fa', optional: true, emit: doNotCircularise
 
     script:
     """
-    if [[ `cat $anyCircularFile` == yes ]]; then
-        ln -s $assemblyFa circular-assembly.fa
+    if [[ `flye_possibly_circular.py $flyeDirectory` == yes ]]; then
+        ln -s $assemblyFa possibly-circular-assembly.fa
     else
         ln -s $assemblyFa linear-assembly.fa
     fi
     """
 }
 
-workflow circulariseAssembly {
+process flyeCircularitySummary {
+    conda params.condaEnvsDir + 'urops-assembly'
+
+    input:
+    path flyeDirectory
+    path assemblyFa // not used
+
+    output:
+    path 'circularity-summary.json', emit: summary
+
+    script:
+    """
+    flye_circularity_summary.py $flyeDirectory > circularity-summary.json
+    """
+}
+
+process summariseAssembly {
+    conda params.condaEnvsDir + 'urops-assembly'
+    publishDir params.outdir, mode: 'copy'
+
+    input:
+    path assemblyFa
+    path circularitySummary // json file
+
+    output:
+    path 'assembly-summary.json'
+
+    script:
+    """
+    summarise_assembly.py $assemblyFa $circularitySummary > assembly-summary.json
+    """
+}
+
+workflow circulariseIfNecessary {
     take:
     assembly
     longReads
+    flyeDirectory
     
     main:
-    canuCorrect(longReads, assembly)
+    shouldCirculariseOrNot(assembly, flyeDirectory)
+
+    // if should circularise
+    canuCorrect(longReads, shouldCirculariseOrNot.out.toCircularise)
     circlator(assembly, canuCorrect.out.pacbioFa)
 
+    // if should not circularise
+    flyeCircularitySummary(flyeDirectory, shouldCirculariseOrNot.out.doNotCircularise)
+
     emit:
-    assembly = circlator.out.assemblyFa
-    circularitySummary = circlator.out.circularitySummary
-}
-
-process makeLinearAssemblyCircSummary {
-    input:
-    path assemblyFa
-
-    output:
-    path 'circularity_summary.json', emit: circularitySummary
-
-    script:
-    """echo \"all linear\" > circularity_summary.json"""
+    assembly = circlator.out.assemblyFa.mix(shouldCirculariseOrNot.out.doNotCircularise)
+    circularitySummary = circlator.out.circularitySummary.mix(flyeCircularitySummary.out.summary)
 }
 
 workflow assembleGenome {
@@ -300,25 +291,13 @@ workflow assembleGenome {
     cleanedLong = cleanLongReads.out.fq
 
     flyeAssembly(cleanedLong)
+    flyeDirectory = flyeAssembly.out.assemblyFa.map{ file(it.parent) } // HACK flye directory
+
     raconPolish(flyeAssembly.out.assemblyFa, cleanedLong)
-    splitByCircularity(raconPolish.out.assemblyFa, flyeAssembly.out.anyCircularFile)
+    circulariseIfNecessary(raconPolish.out.assemblyFa,
+                           cleanedLong,
+                           flyeDirectory) 
+    pilonPolish(circulariseIfNecessary.out.assembly, cleanedShort1, cleanedShort2)
 
-    circulariseAssembly(splitByCircularity.out.circularAssembly, cleanedLong)
-    makeLinearAssemblyCircSummary(splitByCircularity.out.linearAssembly)
-
-    assembly = circulariseAssembly.out.assembly.mix(splitByCircularity.out.linearAssembly)
-    circularitySummary = circulariseAssembly.out.circularitySummary.mix(makeLinearAssemblyCircSummary.out.circularitySummary)
-
-    pilonPolish(assembly, cleanedShort1, cleanedShort2)
-    separateChromosomesAndPlasmids(pilonPolish.out.assemblyFa,
-                                   flyeAssembly.out.assemblyFa.map{ file(it.parent) }) // HACK flye directory
-
-    emit:
-    chromosomeFa = separateChromosomesAndPlasmids.out.chromosomeFa
-    plasmidFa = separateChromosomesAndPlasmids.out.plasmidFa
-    cleanedShortReads1 = cleanedShort1
-    cleanedShortReads2 = cleanedShort2
-    cleanedLongReads = cleanedLong
-    circularitySummary = circularitySummary
-    platonTsv = separateChromosomesAndPlasmids.out.platonTsv
+    summariseAssembly(pilonPolish.out.assemblyFa, circulariseIfNecessary.out.circularitySummary)
 }

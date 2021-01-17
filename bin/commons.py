@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+import re
+from Bio import SeqIO
+
 
 def make_flag(name):
     return "--" + name
@@ -31,3 +34,16 @@ def string_to_bases(bases_str):
         multiplier = 1
 
     return number * multiplier
+
+
+# TODO: port to biopython ?
+def number_of_contigs(assembly_file):
+    """Counts the number of contigs in a fasta file."""
+    text = open(assembly_file).read()
+    matches = re.findall("^>", text, flags=re.MULTILINE)
+    return len(matches)
+
+
+def contig_lengths(assembly_fasta):
+    records = SeqIO.parse(assembly_fasta, "fasta")
+    return {rec.id: len(rec) for rec in records}

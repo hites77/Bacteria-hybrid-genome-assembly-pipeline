@@ -24,7 +24,6 @@ _Note: Name of Nextflow process is written in parenthesis._
    - In addition to the assembly, Circlator requires long reads as input. We use long reads corrected using Canu (`canuCorrect`).
 1. Polish the assembly using Pilon (`pilonPolish`)
    - Pilon is run up to 6 times or until there are no changes.
-1. If Flye has detected plasmids, run platon to separate the chromosomes and plasmids (`separateChromosomesAndPlasmids`)
 
 ### Assembly evaluation
 
@@ -149,7 +148,7 @@ Appropriate paths need to be passed to `--rawIllumina1`, `--rawIllumina2`, `--ra
 
 ### Setting Parameters
 
-Several parameters can be set as a command line flag, eg. `nextflow run ... --outdir /path/to/somewhere` or `nextflow run ... --forcePlaton`. They are listed below:
+Several parameters can be set as a command line flag, eg. `nextflow run ... --outdir /path/to/somewhere` or `nextflow run ... --skipDepChecks`. They are listed below:
 
 **Inputs and outputs:**
 
@@ -174,7 +173,6 @@ Several parameters can be set as a command line flag, eg. `nextflow run ... --ou
 - `--pilonMaxIters <number>`: Maximum number of iterations to run Pilon for. Default: 6.
 - `--raconMaxIters <number>`: Maximum number of iterations to run Racon for. Default: 4.
 - `--canuGenomeSize <genome size>`: When specified, force Canu to use this genome size. See the Canu documentation for genomeSize for valid values. Otherwise, calculate the genome size from the assembly. Default: not specified.
-- `--forcePlaton`: Force the pipeline to run Platon on the assembly even if Flye does not detect any plasmids.
 
 
 ## TODO debugging

@@ -1,10 +1,8 @@
 nextflow.enable.dsl=2
 
-include { evaluateChromosome } from './modules/evaluation.nf'
+include { evaluatePlasmid } from './modules/evaluation.nf'
 include { testPileup; testBbmap; testProkka; testQuast;
-         testMinimap2; testCheckm; testPython_assemblyEnv;
-         testPython_checkmEnv } from './modules/dependency_checks.nf'
-
+         testMinimap2; testPython_assemblyEnv; testPython_checkmEnv } from './modules/dependency_checks.nf'
 
 
 workflow checkDepsIfNecessary {
@@ -18,15 +16,12 @@ workflow checkDepsIfNecessary {
         testProkka()
         testQuast()
         testMinmap2()
-        testCheckm()
         testPython_assemblyEnv()
-        testPython_checkmEnv()
         
         doneChannel = Channel.of(1)
             .mix(testPileup.out[0], testBbmap.out[0],
                  testProkka.out[0], testQuast.out[0],
-                 testMinimap2.out[0], testCheckm.out[0],
-                 testPython_assemblyEnv.out[0], testPython_checkmEnv.out[0])
+                 testMinimap2.out[0], testPython_assemblyEnv.out[0])
             .toList()
             .map({ true })
     }
@@ -38,10 +33,10 @@ workflow checkDepsIfNecessary {
 workflow {
     checkDepsIfNecessary()
 
-    chromosome = checkDepsIfNecessary.out.map({ file(params.chromosome) })
+    plasmid = checkDepsIfNecessary.out.map({ file(params.plasmid) })
     illumina1 = checkDepsIfNecessary.out.map({ file(params.illumina1) })
     illumina2 = checkDepsIfNecessary.out.map({ file(params.illumina2) })
     pacbio = checkDepsIfNecessary.out.map({ file(params.pacbio) })
 
-    evaluateChromosome('', chromosome, illumina1, illumina2, pacbio)
+    evaluatePlasmid('', plasmid, illumina1, illumina2, pacbio)
 }

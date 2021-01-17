@@ -146,7 +146,6 @@ process makeChromosomeSummary {
     path longReadsCoverageDir
     path quastDir
     path prokkaTxt
-    path circularitySummary
     path assemblyFa
     path checkmDir
     
@@ -159,7 +158,6 @@ process makeChromosomeSummary {
         --long $longReadsCoverageDir \
         --quast $quastDir \
         --prokka $prokkaTxt \
-        --circularity $circularitySummary \
         --fasta $assemblyFa \
         --checkm $checkmDir \
         --out chromosome-summary.json
@@ -175,7 +173,6 @@ process makePlasmidSummary {
     path longReadsCoverageDir
     path quastDir
     path prokkaTxt
-    path platonDir
     path plasmidFa
     
     output:
@@ -187,7 +184,6 @@ process makePlasmidSummary {
         --long $longReadsCoverageDir \
         --quast $quastDir \
         --prokka $prokkaTxt \
-        --platon $platonDir \
         --fasta $plasmidFa
         --out plasmid-summary.json
     """
@@ -195,24 +191,23 @@ process makePlasmidSummary {
 
 workflow evaluateChromosome {
     take:
+    pubDirPrefix
     assembly
     cleanedShortReads1
     cleanedShortReads2
     cleanedLongReads
-    circularitySummary
 
     main:
-    shortReadsCoverage(outdirs.evaluateChromosome, assembly, cleanedShortReads1, cleanedShortReads2)
-    longReadsCoverage(outdirs.evaluateChromosome, assembly, cleanedLongReads)
-    prokkaAnnotate(outdirs.evaluateChromosome, assembly)
-    quastEvaluate(outdirs.evaluateChromosome, assembly, prokkaAnnotate.out.gff)
-    checkmEvaluate(outdirs.evaluateChromosome, assembly)
+    shortReadsCoverage(pubDirPrefix, assembly, cleanedShortReads1, cleanedShortReads2)
+    longReadsCoverage(pubDirPrefix, assembly, cleanedLongReads)
+    prokkaAnnotate(pubDirPrefix, assembly)
+    quastEvaluate(pubDirPrefix, assembly, prokkaAnnotate.out.gff)
+    checkmEvaluate(pubDirPrefix, assembly)
     makeChromosomeSummary(
         shortReadsCoverage.out.stats.map { file(it.parent) }, // HACK
         longReadsCoverage.out.stats.map { file(it.parent) }, // HACK
         mapToDirectory(quastEvaluate.out.allFiles),
         prokkaAnnotate.out.txt,
-        circularitySummary,
         assembly,
         mapToDirectory(checkmEvaluate.out.allFiles)
     )
@@ -220,23 +215,22 @@ workflow evaluateChromosome {
 
 workflow evaluatePlasmid {
     take:
+    pubDirPrefix
     assembly
     cleanedShortReads1
     cleanedShortReads2
     cleanedLongReads
-    platonTsv
 
     main:
-    shortReadsCoverage(outdirs.evaluatePlasmid, assembly, cleanedShortReads1, cleanedShortReads2)
-    longReadsCoverage(outdirs.evaluatePlasmid, assembly, cleanedLongReads)
-    prokkaAnnotate(outdirs.evaluatePlasmid, assembly)
-    quastEvaluate(outdirs.evaluatePlasmid, assembly, prokkaAnnotate.out.gff)
+    shortReadsCoverage(pubDirPrefix, assembly, cleanedShortReads1, cleanedShortReads2)
+    longReadsCoverage(pubDirPrefix, assembly, cleanedLongReads)
+    prokkaAnnotate(pubDirPrefix, assembly)
+    quastEvaluate(pubDirPrefix, assembly, prokkaAnnotate.out.gff)
     makePlasmidSummary(
         shortReadsCoverage.out.stats.map { file(it.parent) }, // HACK
         longReadsCoverage.out.stats.map { file(it.parent) }, // HACK
         mapToDirectory(quastEvaluate.out.allFiles),
         prokkaAnnotate.out.txt,
-        platonTsv,
         assembly
     )
 }

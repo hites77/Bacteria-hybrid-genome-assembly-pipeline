@@ -6,15 +6,15 @@ from pathlib import Path
 import pandas as pd
 import json
 
-col_circularised = "circularised"
-col_pandas_index = "Index"
-col_contig_name = "#Contig"
+COL_CIRCULARISED = "circularised"
+COL_PANDAS_INDEX = "Index"
+COL_CONTIG_NAME = "#Contig"
 
 
 def get_merge_circularise_log_df(merge_circ_log_path):
     df = pd.read_table(merge_circ_log_path)
 
-    df = df.set_index(col_contig_name)
+    df = df.set_index(COL_CONTIG_NAME)
 
     def map_circularised_values(text):
         if text == 1:
@@ -24,7 +24,7 @@ def get_merge_circularise_log_df(merge_circ_log_path):
         else:
             raise ValueError(f"Unrecognised circularity type: {text}")
 
-    df[col_circularised] = df[col_circularised].apply(map_circularised_values)
+    df[COL_CIRCULARISED] = df[COL_CIRCULARISED].apply(map_circularised_values)
 
     return df
 
@@ -50,8 +50,8 @@ def is_circular_internal(df, contigs=None):
     result_dict = {}  # contig name : is circular
     for row in df.itertuples():
         row = row._asdict()
-        contig = str(row[col_pandas_index])
-        circularised = row[col_circularised]
+        contig = str(row[COL_PANDAS_INDEX])
+        circularised = row[COL_CIRCULARISED]
         result_dict[contig] = circularised
     return result_dict
 

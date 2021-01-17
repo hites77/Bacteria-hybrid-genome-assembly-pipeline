@@ -5,11 +5,11 @@
 See the documentation for the main function.
 """
 
-import re
 import sys
 
 import pandas as pd
 from Bio import SeqIO
+from commons import number_of_contigs
 
 ### CONSTANTS ###
 
@@ -44,13 +44,6 @@ def sequences_different(assembly_file1, assembly_file2):
         if record1.seq != record2.seq:
             return True
     return False
-
-
-# TODO: port to biopython ?
-def number_of_contigs(assembly_file):
-    text = open(assembly_file).read()
-    matches = re.findall("^>", text, flags=re.MULTILINE)
-    return len(matches)
 
 
 def main(assembly1, assembly2):

@@ -11,8 +11,8 @@ def getDirectory(fileList) {
 
     // try to find longest common directory
     def directory = fileList[0].isDirectory() ? fileList[0] : file(fileList[0].parent)
-    boolean continueFlag = false
-    while (true) {
+    boolean continueFlag = true
+    while (continueFlag) {
         continueFlag = false
         for (int i=0; i < fileList.size(); i++) {
             if (fileList[i] != directory) {
@@ -25,9 +25,6 @@ def getDirectory(fileList) {
                     directory = fileList[i]
                 }
             }
-        }
-        if (!continueFlag) {
-            break
         }
     }
 

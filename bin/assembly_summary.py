@@ -5,13 +5,11 @@ import json
 import sys
 from pathlib import Path
 
-import platon_stats
 from alignment_stats import average_coverage, reads_mapped
 from Bio import SeqIO
 from cds import cds
 from checkm_stats import checkm_stats
 from commons import make_flag
-from contig_names import get_contig_names
 from quast_stats import quast_stats
 
 ### CONSTANTS ###
@@ -113,7 +111,6 @@ def make_chromosome_summary(
     long_reads_coverage_dir,
     quast_dir,
     prokka_txt,
-    circularity_summary,
     fasta_file,
     checkm_dir,
 ):
@@ -136,12 +133,6 @@ def make_chromosome_summary(
     )
     error_list = results["errors"]
     assign_to_dict = make_assigner(results, error_list)
-    assign_to_dict(
-        KEY_CIRCULARITY,
-        lambda: filtered_circularity_sumary(
-            circularity_summary, contigs=get_contig_names(fasta_file)
-        ),
-    )
     assign_to_dict("checkm", lambda: checkm_stats(checkm_dir), update=True)
 
     if error_list:
@@ -156,7 +147,6 @@ def make_plasmid_summary(
     quast_dir,
     prokka_txt,
     fasta_file,
-    platon_tsv,
 ):
     results = make_common_summary(
         short_reads_coverage_dir=short_reads_coverage_dir,
@@ -166,8 +156,6 @@ def make_plasmid_summary(
         fasta_file=fasta_file,
     )
     error_list = results["errors"]
-    assign_to_dict = make_assigner(results, error_list)
-    assign_to_dict(KEY_CIRCULARITY, lambda: platon_stats.cicularity(platon_tsv))
 
     if error_list:
         print("Errors:\n", error_list, file=sys.stderr)
@@ -187,11 +175,7 @@ FLAG_OUT = "out"
 FLAG_FASTA = "fasta"
 
 # chromosome
-FLAG_CIRCULARITY_SUMMARY = "circularity"
 FLAG_CHECKM_DIR = "checkm"
-
-# plasmid
-FLAG_PLATON_TSV = "platon"
 
 
 def make_base_parser():
@@ -207,14 +191,12 @@ def make_base_parser():
 
 def make_chromosome_parser():
     parser = make_base_parser()
-    parser.add_argument(make_flag(FLAG_CIRCULARITY_SUMMARY), required=True)
     parser.add_argument(make_flag(FLAG_CHECKM_DIR), required=True)
     return parser
 
 
 def make_plasmid_parser():
     parser = make_base_parser()
-    parser.add_argument(make_flag(FLAG_PLATON_TSV), required=True)
     return parser
 
 
@@ -230,7 +212,6 @@ def chromosome_main():
         long_reads_coverage_dir=args[FLAG_LONG_READS_COV_DIR],
         quast_dir=args[FLAG_QUAST_DIR],
         prokka_txt=args[FLAG_PROKKA_TXT],
-        circularity_summary=args[FLAG_CIRCULARITY_SUMMARY],
         fasta_file=args[FLAG_FASTA],
         checkm_dir=args[FLAG_CHECKM_DIR],
     )
@@ -246,7 +227,6 @@ def plasmid_main():
         long_reads_coverage_dir=args[FLAG_LONG_READS_COV_DIR],
         quast_dir=args[FLAG_QUAST_DIR],
         prokka_txt=args[FLAG_PROKKA_TXT],
-        platon_tsv=args[FLAG_PLATON_TSV],
         fasta_file=args[FLAG_FASTA],
     )
     json.dump(summary, open(save_to, "w"), indent=4)
