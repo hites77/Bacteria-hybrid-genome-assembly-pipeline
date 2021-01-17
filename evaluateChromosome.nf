@@ -15,7 +15,7 @@ workflow checkDepsIfNecessary {
         testBbmap()
         testProkka()
         testQuast()
-        testMinmap2()
+        testMinimap2()
         testCheckm()
         testPython_assemblyEnv()
         testPython_checkmEnv()

@@ -14,7 +14,7 @@ workflow checkDepsIfNecessary {
         testBbmap()
         testProkka()
         testQuast()
-        testMinmap2()
+        testMinimap2()
         testPython_assemblyEnv()
         
         doneChannel = Channel.of(1)
