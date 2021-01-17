@@ -17,7 +17,7 @@ def make_assembly_summary(assembly_fasta, circularity_summary):
     return {
         "number of contigs": number_of_contigs(assembly_fasta),
         "contig lengths": contig_lengths(assembly_fasta),
-        "contig circularity": json.load(circularity_summary),
+        "contig circularity": json.load(open(circularity_summary)),
     }
 
 
