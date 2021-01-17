@@ -5,6 +5,12 @@ include { testPileup; testBbmap; testProkka; testQuast;
          testMinimap2; testCheckm; testPython_assemblyEnv;
          testPython_checkmEnv } from './modules/dependencyChecks.nf'
 
+if (params.assembly == null || params.illumina1 == null || params.illumina2 == null
+    || params.pacbio == null || params.outdir == null) {
+    log.error "--assembly, --illumina1, --illumina2, --pacbio, and --outdir are required parameters."
+    exit 1
+}
+
 workflow checkDependencies {
     main:
     def doneChannel
@@ -37,7 +43,7 @@ workflow {
     checkDependencies()
 
     // ensure evaluation only starts when the dependency checks are finished
-    chromosome = checkDependencies.out.map({ file(params.chromosome) })
+    chromosome = checkDependencies.out.map({ file(params.assembly) })
     illumina1 = checkDependencies.out.map({ file(params.illumina1) })
     illumina2 = checkDependencies.out.map({ file(params.illumina2) })
     pacbio = checkDependencies.out.map({ file(params.pacbio) })

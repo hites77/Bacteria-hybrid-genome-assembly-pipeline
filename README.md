@@ -180,21 +180,13 @@ In addition to the files created specifically by each process, the stdout, stder
 To evaluate a chromosome:
 
 ``` sh
-nextflow run evaluateChromosome.nf --illumina1 <path> --illumina2 <path> --pacbio <path> --chromosome <path> \
+nextflow run evaluateChromosome.nf --illumina1 <path> --illumina2 <path> --pacbio <path> --assembly <path> \
     --outdir <path> \
     # execution-related params
     [--skipDepChecks] [--threads <number>] [-work-dir <path>] [--condaEnvsDir <path>] [-profile <profiles>]
 ```
 
-To evaluate a plasmid:
-
-``` sh
-nextflow run evaluatePlasmid.nf --illumina1 <path> --illumina2 <path> --pacbio <path> --plasmid <path> \
-    --outdir <path> \
-    # execution-related params
-    [--skipDepChecks] [--threads <number>] [-work-dir <path>] [--condaEnvsDir <path>] [-profile <profiles>]
-```
-
+To evaluate a plasmid, replace `evaluationChromosome.nf` with `evaluatePlasmid.nf`.
 
 The only difference between the chromosome and plasmid evaluation is CheckM is not run for plasmids.
 
@@ -263,7 +255,7 @@ As with other scripts, `nextflow.command.sh`, `nextflow.command.log` and `nextfl
 - `--illumina1 <path>`: Path to 1st file for **cleaned** paired end Illumina reads. May be fastq or gzipped fastq.
 - `--illumina2 <path>`: Path to 2nd file for **cleaned** paired end Illumina reads. May be fastq or gzipped fastq.
 - `--pacbio <path>`: Path to the **cleaned** Pacbio reads. May be fastq or gzipped fastq.
-- `--plasmid <path>`/`--chromosome <path>`: Path to fasta file of chromosome/plasmid assembly.
+- `--assembly <path>`: Path to fasta file of chromosome/plasmid assembly.
 - `--outdir <path>`: Path to the output directory, which is where all output files will be stored.
 
 **Optional parameters:**

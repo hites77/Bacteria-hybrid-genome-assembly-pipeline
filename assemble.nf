@@ -6,8 +6,17 @@ include { testSamtools; testBwa; testBbduk; testFiltlong; testFlye;
          testCirclator; testRacon; testCanu; testPilon; testMinimap2;
          testPython_assemblyEnv; testPython_circlatorEnv } from './modules/dependencyChecks.nf'
 
-// TODO validate params
-// TODO validate: all dirs end with a slash, no spaces
+if (params.assembly != null) {
+    log.info "The --assembly parameter will be ignored."
+}
+
+// check required params are present
+if (params.illumina1 == null || params.illumina2 == null || params.pacbio == null || params.outdir == null) {
+    log.error "--illumina1, --illumina 2, --pacbio, and --outdir are required parameters."
+    exit 1
+}
+
+params.outdir = params.outdir + "/"
 
 workflow checkDependencies {
     main:
@@ -42,7 +51,6 @@ workflow checkDependencies {
     emit:
     done = doneChannel
 }
-
 
 workflow assemble {
     take:
