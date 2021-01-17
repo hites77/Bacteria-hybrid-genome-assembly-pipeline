@@ -16,6 +16,11 @@ if (params.illumina1 == null || params.illumina2 == null || params.pacbio == nul
     exit 1
 }
 
+if (params.forceCirclator && params.noCirclator) {
+    log.error "--forceCirclator and --noCirclator are mutually exclusive. Pass only 1 flag, or pass neither of them."
+    exit 1
+}
+
 params.outdir = params.outdir + "/"
 
 workflow checkDependencies {

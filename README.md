@@ -108,7 +108,7 @@ nextflow run assemble.nf --illumina1 <path> --illumina2 <path> --pacbio <path> -
    - Racon is run up to 4 times or until there are no changes.
 1. If the assembly is potentially circular, then attempt circularisation using Circlator (`circlator`). Canu corrected long reads (`canuCorrect`) are given to Circlator as input.
    - An assembly is considered potentially circular if Flye identifies any circular contigs or there are multiple linear contigs.
-   - (Coming soon) ~You can force Circlator to always run / never run using `--forceCirclator` / `--noCirclator`.~
+   - (Coming soon) You can force Circlator to always run / never run using `--forceCirclator` / `--noCirclator`.
 1. Polish the assembly using Pilon (`pilonPolish`)
    - Pilon is run up to 6 times or until there are no changes.
 1. Save a summary of some basic statistics about the assembly (number of contigs, size of contigs, and circularity of contigs) to the file `assembly-summary.json` (`summariseAssembly`)

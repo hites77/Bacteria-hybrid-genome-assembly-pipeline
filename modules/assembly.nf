@@ -209,17 +209,25 @@ process shouldCirculariseOrNot {
     path flyeDirectory
 
     output:
-    path 'possibly-circular-assembly.fa', optional: true, emit: toCircularise
-    path 'linear-assembly.fa', optional: true, emit: doNotCircularise
+    path 'to_circularise_assembly.fa', optional: true, emit: toCircularise
+    path 'do_not_circularise_assembly.fa', optional: true, emit: doNotCircularise
 
     script:
-    """
-    if [[ `flye_possibly_circular.py $flyeDirectory` == yes ]]; then
-        ln -s $assemblyFa possibly-circular-assembly.fa
-    else
-        ln -s $assemblyFa linear-assembly.fa
-    fi
-    """
+    def toCirculariseCmd = "ln -s $assemblyFa to_circularise_assembly.fa"
+    def doNotCirculariseCmd =  "ln -s $assemblyFa do_not_circularise_assembly.fa"
+    if (params.forceCirclator) {
+        "$toCirculariseCmd"
+    } else if (params.noCirclator) {
+        "$doNotCirculariseCmd"
+    } else {
+        """
+        if [[ `flye_possibly_circular.py $flyeDirectory` == yes ]]; then
+            $toCirculariseCmd
+        else
+            $doNotCirculariseCmd
+        fi
+        """
+    }
 }
 
 process flyeCircularitySummary {
