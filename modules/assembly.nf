@@ -240,7 +240,7 @@ process flyeCircularitySummary {
 
 process summariseAssembly {
     conda params.condaEnvsDir + 'urops-assembly'
-    publishDir params.outdir, mode: 'copy'
+    publishDir params.outdir + 'assembly/', mode: 'copy'
 
     input:
     path assemblyFa
