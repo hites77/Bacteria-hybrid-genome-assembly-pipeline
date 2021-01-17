@@ -2,8 +2,7 @@ nextflow.enable.dsl=2
 
 include { evaluatePlasmid } from './modules/evaluation.nf'
 include { testPileup; testBbmap; testProkka; testQuast;
-         testMinimap2; testPython_assemblyEnv; testPython_checkmEnv } from './modules/dependency_checks.nf'
-
+         testMinimap2; testPython_assemblyEnv; testPython_checkmEnv } from './modules/dependencyChecks.nf'
 
 workflow checkDepsIfNecessary {
     main:
@@ -33,6 +32,7 @@ workflow checkDepsIfNecessary {
 workflow {
     checkDepsIfNecessary()
 
+    // ensure evaluation only starts when the dependency checks are finished
     plasmid = checkDepsIfNecessary.out.map({ file(params.plasmid) })
     illumina1 = checkDepsIfNecessary.out.map({ file(params.illumina1) })
     illumina2 = checkDepsIfNecessary.out.map({ file(params.illumina2) })

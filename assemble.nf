@@ -4,7 +4,7 @@ include { assembleGenome } from './modules/assembly.nf'
 include { evaluateChromosome; evaluatePlasmid } from './modules/evaluation.nf'
 include { testSamtools; testBwa; testBbduk; testFiltlong; testFlye;
          testCirclator; testRacon; testCanu; testPilon; testMinimap2;
-         testPython_assemblyEnv; testPython_circlatorEnv } from './modules/dependency_checks.nf'
+         testPython_assemblyEnv; testPython_circlatorEnv } from './modules/dependencyChecks.nf'
 
 // TODO validate params
 // TODO validate: all dirs end with a slash, no spaces
@@ -49,7 +49,7 @@ workflow assemble {
     depChecksDone
     
     main:
-    // ensure assembly only start when the dependency checks are finished
+    // ensure assembly only starts when the dependency checks are finished
     rawIllumina1Fq = depChecksDone.map({ params.illumina1 }) 
     rawIllumina2Fq = depChecksDone.map({ params.illumina2 })
     rawPacbioFq = depChecksDone.map({ params.pacbio })
