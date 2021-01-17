@@ -202,6 +202,8 @@ process pilonPolish {
 }
 
 process shouldCirculariseOrNot {
+    conda params.condaEnvsDir + 'urops-assembly'
+
     input:
     path assemblyFa
     path flyeDirectory
