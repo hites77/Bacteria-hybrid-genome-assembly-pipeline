@@ -5,7 +5,7 @@ include { testPileup; testBbmap; testProkka; testQuast;
          testMinimap2; testCheckm; testPython_assemblyEnv;
          testPython_checkmEnv } from './modules/dependencyChecks.nf'
 
-workflow checkDepsIfNecessary {
+workflow checkDependencies {
     main:
     def doneChannel
     if (params.skipDepChecks) {
@@ -34,13 +34,13 @@ workflow checkDepsIfNecessary {
 }
 
 workflow {
-    checkDepsIfNecessary()
+    checkDependencies()
 
     // ensure evaluation only starts when the dependency checks are finished
-    chromosome = checkDepsIfNecessary.out.map({ file(params.chromosome) })
-    illumina1 = checkDepsIfNecessary.out.map({ file(params.illumina1) })
-    illumina2 = checkDepsIfNecessary.out.map({ file(params.illumina2) })
-    pacbio = checkDepsIfNecessary.out.map({ file(params.pacbio) })
+    chromosome = checkDependencies.out.map({ file(params.chromosome) })
+    illumina1 = checkDependencies.out.map({ file(params.illumina1) })
+    illumina2 = checkDependencies.out.map({ file(params.illumina2) })
+    pacbio = checkDependencies.out.map({ file(params.pacbio) })
 
     evaluateChromosome('', chromosome, illumina1, illumina2, pacbio)
 }

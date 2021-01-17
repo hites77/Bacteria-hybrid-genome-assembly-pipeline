@@ -9,7 +9,7 @@ include { testSamtools; testBwa; testBbduk; testFiltlong; testFlye;
 // TODO validate params
 // TODO validate: all dirs end with a slash, no spaces
 
-workflow checkDepsIfNecessary {
+workflow checkDependencies {
     main:
     def doneChannel
     if (params.skipDepChecks) {
@@ -58,6 +58,6 @@ workflow assemble {
 }
 
 workflow {
-    checkDepsIfNecessary()
-    assemble(checkDepsIfNecessary.out)
+    checkDependencies()
+    assemble(checkDependencies.out)
 }

@@ -258,7 +258,7 @@ process testPython_checkmEnv {
 }
 
 // TODO is there a way to run everything to completion before erroring?
-workflow checkDependencies {
+workflow checkAllDependencies {
     main:
     // urops-assembly environment
     testBbduk()

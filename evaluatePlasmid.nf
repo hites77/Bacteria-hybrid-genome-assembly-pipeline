@@ -4,7 +4,7 @@ include { evaluatePlasmid } from './modules/evaluation.nf'
 include { testPileup; testBbmap; testProkka; testQuast;
          testMinimap2; testPython_assemblyEnv; testPython_checkmEnv } from './modules/dependencyChecks.nf'
 
-workflow checkDepsIfNecessary {
+workflow checkDependencies {
     main:
     def doneChannel
     if (params.skipDepChecks) {
@@ -30,13 +30,13 @@ workflow checkDepsIfNecessary {
 }
 
 workflow {
-    checkDepsIfNecessary()
+    checkDependencies()
 
     // ensure evaluation only starts when the dependency checks are finished
-    plasmid = checkDepsIfNecessary.out.map({ file(params.plasmid) })
-    illumina1 = checkDepsIfNecessary.out.map({ file(params.illumina1) })
-    illumina2 = checkDepsIfNecessary.out.map({ file(params.illumina2) })
-    pacbio = checkDepsIfNecessary.out.map({ file(params.pacbio) })
+    plasmid = checkDependencies.out.map({ file(params.plasmid) })
+    illumina1 = checkDependencies.out.map({ file(params.illumina1) })
+    illumina2 = checkDependencies.out.map({ file(params.illumina2) })
+    pacbio = checkDependencies.out.map({ file(params.pacbio) })
 
     evaluatePlasmid('', plasmid, illumina1, illumina2, pacbio)
 }
