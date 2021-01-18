@@ -36,9 +36,19 @@ TODO: improve this
 
 Nextflow stores temporary data in a working directory.
 This will basically includes all of the files mentioned above and possibly additional intermediate files.
-This can be safely deleted after the pipeline finishes running.
+This can be safely deleted after the pipeline finishes running, **unless** the pipeline failed and you want to [resume it](#tip-resuming-a-script).
 
 See more at: https://www.nextflow.io/docs/latest/script.html?highlight=workdir#implicit-variables, https://github.com/danrlu/Nextflow_cheatsheet#the-working-directory
+
+**Nextflow reports:**
+
+Nextflow has also been configured to generate several reports detailing the runtime, resources used and other information:
+
+- `nextflow-report-<timestamp>.html`: a comprehensive summary of the pipeline ([Example](https://www.nextflow.io/docs/latest/tracing.html#execution-report))
+- `nextflow-timeline-<timestamp>.html`: a timeline showing the duration of each process. ([Example](https://www.nextflow.io/docs/latest/tracing.html#timeline-report))
+- `nextflow-trace-<timestamp>.tsv`: a table of information about each process. ([Example](https://www.nextflow.io/docs/latest/tracing.html#trace-report))
+
+These reports are saved to either the [outdir folder](#assemble-parameter-desc) or the directory that nextflow was launched from (if outdir is not defined).
 
 #### Recommended workflow:
 
@@ -49,7 +59,7 @@ See more at: https://www.nextflow.io/docs/latest/script.html?highlight=workdir#i
 
 #### TIP: resuming a script
 
-If a script terminated early due to an error, you can resume the script from where it left off after fixing the error using the `-resume` flag.
+If a script terminated early due to an error, you can resume the script from where it left off after fixing the error using the `-resume` flag. Note that you must **not** have deleted the working directory in order for resume to work.
 
 Read more at:
 - https://www.nextflow.io/docs/latest/getstarted.html?highlight=resume#modify-and-resume
@@ -160,6 +170,8 @@ In addition to the files created specifically by each process, the stdout, stder
 - `nextflow.exitcode`: the script's exit code.
 
 #### Parameter descriptions
+
+<a id="assemble-parameter-desc"></a>
 
 **Required parameters:**
 
