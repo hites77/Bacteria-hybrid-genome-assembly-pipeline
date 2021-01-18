@@ -55,16 +55,17 @@ process cleanLongReads {
     path '.command.log'
     path '.exitcode'
     path outdirs.cleanLongReads + 'pacbio.fq', emit: fq
-    path outdirs.cleanLongReads + 'above_10kb_reads_removed.tsv', optional: true
+    path outdirs.cleanLongReads + "above_${params.filtlongCheckThreshold}_reads_removed.tsv", optional: true
 
     script:
     """
     mkdir -p ${outdirs.cleanLongReads}
     filtlong -1 $illumina1Fq -2 $illumina2Fq \
-        --min_length 1000 --keep_percent 90 --trim --split 500 --mean_q_weight 10 \
+        $params.filtlongArgs \
         $pacbioFq > ${outdirs.cleanLongReads}/pacbio.fq
     check_long_reads_removed.py --old $pacbioFq --new ${outdirs.cleanLongReads}/pacbio.fq \
-        --threshold 10k --tsv ${outdirs.cleanLongReads}/above_10kb_reads_removed.tsv
+        --threshold $params.filtlongCheckThreshold \
+        --tsv ${outdirs.cleanLongReads}/above_${params.filtlongCheckThreshold}_reads_removed.tsv
     """
 }
 
@@ -90,7 +91,7 @@ process flyeAssembly {
     script:
     """
     mkdir -p ${outdirs.flyeAssembly} # flye can only create 1 dir
-    flye --plasmids --threads $params.threads --pacbio-raw $pacbioFq -o ${outdirs.flyeAssembly}
+    flye --plasmids --threads $params.threads --pacbio-raw $pacbioFq -o ${outdirs.flyeAssembly} $params.flyeArgs
     """
 }
 
@@ -112,7 +113,7 @@ process raconPolish {
 
     script:
     """
-    run_racon.py --in_assembly $assemblyFa --in_pacbio $pacbioFq --out_prefix final_racon --threads $params.threads --maxiters $params.raconMaxIters --args "-m 8 -x -6 -g -8 -w 500"
+    run_racon.py --in_assembly $assemblyFa --in_pacbio $pacbioFq --out_prefix final_racon --threads $params.threads --maxiters $params.raconMaxIters --args "$params.raconArgs"
     """
 }
 
@@ -140,7 +141,7 @@ process canuCorrect {
         "\$(seq_length.py $assemblyFa | bases_to_string.py -)"
         : params.canuGenomeSize.toString()
     """
-    canu -correct -p canu -d $outdirs.canuCorrect genomeSize=$genomeSize -pacbio $pacbioFq useGrid=false
+    canu -correct -p canu -d $outdirs.canuCorrect genomeSize=$genomeSize -pacbio $pacbioFq useGrid=false $params.canuArgs
     """
 }
 
@@ -168,7 +169,7 @@ process circlator {
     mkdir -p ${outdirs.circlator}
 
     # circlator can't handle nested directories
-    circlator all $assemblyFa $pacbioFa circlator-temp
+    circlator $params.circlatorArgs all $assemblyFa $pacbioFa circlator-temp
     circlator_circularity_summary.py circlator-temp > ${outdirs.circlator}/circularity_summary.json
 
     mv circlator-temp/* ${outdirs.circlator}
@@ -197,7 +198,8 @@ process pilonPolish {
     """
     run_pilon.py --assembly $assemblyFa --reads1 $illumina1Fq --reads2 $illumina2Fq \
                 --out final_pilon_assembly.fa \
-                --maxiters $params.pilonMaxIters --threads $params.threads
+                --maxiters $params.pilonMaxIters --threads $params.threads \
+                --args "$params.pilonArgs"
     """
 }
 

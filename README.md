@@ -92,8 +92,10 @@ Assemble a genome from raw Illumina and Pacbio reads. Some basic statistics (num
 ``` sh
 nextflow run assemble.nf --illumina1 <path> --illumina2 <path> --pacbio <path> --outdir <path> \
     [--shortReadsKeepPercent <percent>] [--shortReadsStartTrimq <percent>] [--shortReadsMinTrimq <percent>] \
-    [--bbdukArgs <args>] [--pilonMaxIters <number>] [--raconMaxIters <number>] \ 
-    [--canuGenomeSize <size>] [--forceCirclator | --noCirclator] \
+    [--bbdukArgs <args>] [--filtlongArgs <args>] [--filtlongCheckThreshold <threshold>] \
+    [--flyeArgs <args>] \
+    [--raconMaxIters <number>] [--raconArgs <args>] [--pilonMaxIters <number>] [--pilonArgs <args>] \ 
+    [--canuGenomeSize <size>] [--canuArgs <args>] [--circlatorArgs <args>] [--forceCirclator | --noCirclator] \
     # execution-related params
     [--skipDepChecks] [--threads <number>] [-work-dir <path>] [--condaEnvsDir <path>] [-profile <profiles>]
 ```
@@ -164,11 +166,22 @@ In addition to the files created specifically by each process, the stdout, stder
     - `--shortReadsKeepPercent <percent>`: Ensure at least X% of reads are kept. Default: 80.
     - `--shortReadsStartTrimq <trimq>`: Highest possible `trimq` value for bbduk. Default: 40.
     - `--shortReadsMinTrimq <trimq>`: Lowest permissible `trimq` value for bbduk. Default: 28.
-    - `--bbdukArgs <args>`: Arguments other than inputs, outputs and `trimq` to pass to bbduk. Default: `qtrim=rl minlength=40`.
-- `--pilonMaxIters <number>`: Maximum number of iterations to run Pilon for. Default: 6.
-- `--raconMaxIters <number>`: Maximum number of iterations to run Racon for. Default: 4.
+    - `--bbdukArgs <args>`: Arguments (other than inputs, outputs and `trimq`) to pass to bbduk. Default: `qtrim=rl minlength=40`.
+- Long read filtering and cleaning:
+    - `--filtlongArgs <args>`: Arguments (other than inputs and outputs) to pass to Filtlong. Default: `--min_length 1000 --keep_percent 90 --trim --split 500 --mean_q_weight 10`.
+    - `--filtlongCheckThreshold <number>[k|m|g]`: Flag reads above the given length (eg. 10, 10k, 10m, 10g) which were removed by Filtlong. The number of these reads will be printed to stdout and the IDs and lengths of these reads will be saved to a TSV file. Default: 10k.
+- Flye:
+    - `--flyeArgs <args>`: Arguments (other than inputs, outputs, threads and `--plasmids`) to pass to Flye. Default: none.
+- Racon:
+    - `--raconMaxIters <number>`: Maximum number of iterations to run Racon for. Default: 4.
+    - `--raconArgs <args>`: Arguments (other than inputs, outputs, and threads) to pass to Racon. Default: `-m 8 -x -6 -g -8 -w 500`.
+- Pilon:
+    - `--pilonMaxIters <number>`: Maximum number of iterations to run Pilon for. Default: 6.
+    - `--pilonArgs <args>`: Arguments (other than inputs, outputs, and  `--changes`) to pass to Pilon. Default: none.
 - Circularisation:
     - `--canuGenomeSize <genome size>`: When specified, force Canu to use this genome size. See the Canu documentation for genomeSize for valid values. Otherwise, calculate the genome size from the assembly. Default: not specified.
+    - `--canuArgs <args>`: Arguments (other than inputs, outputs and genome size) to pass to Canu. Default: none.
+    - `--circlatorArgs <args>`: Arguments (other than inputs and outputs) to pass to Circlator. Default: none.
     - `--forceCirclator`: Force Circlator to be used, regardless of the state of the Flye assembly.
     - `--noCirclator`: Do not use Circlator, regardless of the state of the Flye assembly.
 - Also see [execution related parameters](#execution-related-parameters)
