@@ -30,15 +30,15 @@ See the [scripts section](#scripts) for descriptions of the scripts available an
 - Do note that some flags begin with a single dash `-`, while some begin with a double dash `--`.
 - The scripts need to be launched from the root directory of this repository, in order for the configurations in the `nextflow.config` file to be applied.
 
-**(TODO) Nextflow's working directory (workDir):**
+**Nextflow's working directory (workDir):**
+
+TODO: improve this
 
 Nextflow stores temporary data in a working directory.
 This will basically includes all of the files mentioned above and possibly additional intermediate files.
 This can be safely deleted after the pipeline finishes running.
 
 See more at: https://www.nextflow.io/docs/latest/script.html?highlight=workdir#implicit-variables, https://github.com/danrlu/Nextflow_cheatsheet#the-working-directory
-
-TODO document `-resume`
 
 #### Recommended workflow:
 
@@ -47,6 +47,14 @@ TODO document `-resume`
 1. Evaluate chromsomes using `evaluateChromosome.nf`, and plasmids using `evaluatePlasmid.nf`.
 1. Delete the work directory if you don't need any of the other files.
 
+#### TIP: resuming a script
+
+If a script terminated early due to an error, you can resume the script from where it left off after fixing the error using the `-resume` flag.
+
+Read more at:
+- https://www.nextflow.io/docs/latest/getstarted.html?highlight=resume#modify-and-resume
+- https://www.nextflow.io/blog/2019/demystifying-nextflow-resume.html
+- https://www.nextflow.io/blog/2019/troubleshooting-nextflow-resume.html
 
 #### TIP: for compute clusters with OpenMPI
 
@@ -299,7 +307,7 @@ These are parameters which do not control what is run, only how the pipeline is 
 - `-work-dir`: (note that there is only a single `-` at the front) Path to Nextflow's working directory, which is where temporary files will be stored. Default: `./work/`.
     - When running on the NSCC Aspire 1 server, you can set this to a folder in the scratch directory to save space in your home directory.
 - `--skipDepChecks`: Skip pre-pipeline dependency checks. Does not apply to the `checkAllDependencies.nf` script.
-- `-profile <profiles>`: (note that there is only a single `-` at the front) List of [Nextflow profiles](https://www.nextflow.io/docs/latest/config.html#config-profiles) to apply. Options: 
+- `-profile <profiles>`: (note that there is only a single `-` at the front) List of [Nextflow configuration profiles](https://www.nextflow.io/docs/latest/config.html#config-profiles) to apply. Options: 
     - `local`: Applies settings for working on a laptop: `--threads 4`.
     - `nscc`: Applies settings for working on the NSCC Aspire 1 sever: `-work-dir ~/scratch/work/ --threads 20`.
 
