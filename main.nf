@@ -63,12 +63,19 @@ Decide how you want to split the contigs and perform evaluation manually using e
 }
 
 workflow {
-    checkAllDependencies()
+    def doneDepChecksChannel
+    if (params.skipDepChecks) {
+        doneDepChecksChannel = Channel.of(true)
+    } else {
+        checkAllDependencies()
+        doneDepChecksChannel = checkAllDependencies.out
+    }
+
 
     // ensure assembly only begins after dependency checks are done
-    rawIllumina1Fq = checkAllDependencies.out.map({ params.illumina1 })
-    rawIllumina2Fq = checkAllDependencies.out.map({ params.illumina2 })
-    rawPacbioFq = checkAllDependencies.out.map({ params.pacbio })
+    rawIllumina1Fq = doneDepChecksChannel.map({ params.illumina1 })
+    rawIllumina2Fq = doneDepChecksChannel.map({ params.illumina2 })
+    rawPacbioFq = doneDepChecksChannel.map({ params.pacbio })
 
     assembleGenome(rawIllumina1Fq, rawIllumina2Fq, rawPacbioFq)
     findReadyToEvaluate(assembleGenome.out.assembly)
