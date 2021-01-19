@@ -255,23 +255,6 @@ process flyeCircularitySummary {
     """
 }
 
-process summariseAssembly {
-    conda params.condaEnvsDir + 'urops-assembly'
-    publishDir params.outdir + 'assembly/', mode: 'copy'
-
-    input:
-    path assemblyFa
-    path circularitySummary // json file
-
-    output:
-    path 'assembly-summary.json'
-
-    script:
-    """
-    summarise_assembly.py $assemblyFa $circularitySummary > assembly-summary.json
-    """
-}
-
 workflow circulariseIfNecessary {
     take:
     assembly
@@ -291,6 +274,23 @@ workflow circulariseIfNecessary {
     emit:
     assembly = circlator.out.assemblyFa.mix(shouldCirculariseOrNot.out.doNotCircularise)
     circularitySummary = circlator.out.circularitySummary.mix(flyeCircularitySummary.out.summary)
+}
+
+process summariseAssembly {
+    conda params.condaEnvsDir + 'urops-assembly'
+    publishDir params.outdir + 'assembly/', mode: 'copy'
+
+    input:
+    path assemblyFa
+    path circularitySummary // json file
+
+    output:
+    path 'assembly-summary.json'
+
+    script:
+    """
+    summarise_assembly.py $assemblyFa $circularitySummary > assembly-summary.json
+    """
 }
 
 workflow assembleGenome {
@@ -319,4 +319,11 @@ workflow assembleGenome {
     pilonPolish(circulariseIfNecessary.out.assembly, cleanedShort1, cleanedShort2)
 
     summariseAssembly(pilonPolish.out.assemblyFa, circulariseIfNecessary.out.circularitySummary)
+
+    emit:
+    assembly = pilonPolish.out.assemblyFa
+    summary = summariseAssembly.out
+    cleanedShortReads1 = cleanedShort1
+    cleanedShortReads2 = cleanedShort2
+    cleanedLongReads = cleanedLong
 }
