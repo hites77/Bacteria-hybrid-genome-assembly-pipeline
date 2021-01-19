@@ -25,22 +25,20 @@ A script is launched using the `nextflow run` command from the root directory, e
 Various command line arguments can be passed to a script (eg. `--illumina1`, `-work-dir`). 
 See the [scripts section](#scripts) for descriptions of the scripts available and their parameters.
 
-**Things to take note of:**
-
-- Do note that some flags begin with a single dash `-`, while some begin with a double dash `--`.
+Things to take note of:
+- Some flags begin with a single dash `-`, while some begin with a double dash `--`.
 - The scripts need to be launched from the root directory of this repository, in order for the configurations in the `nextflow.config` file to be applied.
 
-**Nextflow's working directory (workDir):**
-
-TODO: improve this
+<a id="work-dir"></a>
+#### Nextflow's working directory (workDir):
 
 Nextflow stores temporary data in a working directory.
-This will basically includes all of the files mentioned above and possibly additional intermediate files.
+This will basically include a copy of all the output files plus other intermediate files.
 This can be safely deleted after the pipeline finishes running, **unless** the pipeline failed and you want to [resume it](#tip-resuming-a-script).
 
 See more at: https://www.nextflow.io/docs/latest/script.html?highlight=workdir#implicit-variables, https://github.com/danrlu/Nextflow_cheatsheet#the-working-directory
 
-**Nextflow reports:**
+#### Nextflow reports:
 
 Nextflow has also been configured to generate several reports detailing the runtime, resources used and other information:
 
@@ -52,10 +50,9 @@ These reports are saved to either the [outdir folder](#assemble-parameter-desc) 
 
 #### Recommended workflow:
 
-1. Run `assemble.nf` to assemble the genome.
-1. Check whether the resulting assembly has multiple contigs. If there are multiple contigs, decide how to separate them (chromosomes and plasmids, possibly belonging to multiple bacteria). It may be helpful to use Platon (included in the `urops-assembly` environment) and/or BLAST.
-1. Evaluate chromsomes using `evaluateChromosome.nf`, and plasmids using `evaluatePlasmid.nf`.
-1. Delete the work directory if you don't need any of the other files.
+1. Run [`main.nf`](#genome-assembly--evaluation-mainnf) to try to assemble and evaluate the genome.
+1. If evaluation wasn't able to be carried out (due to the presence of multiple contigs in the assembly), then decide how to separate contigs and run evaluation manually using [`evaluateChromosome.nf` and/or `evaluatePlasmid.nf`](#assembly-evaluation-evaluatechromosomenf-evaluateplasmidnf).
+1. Delete the [working directory](#work-dir) if you don't need any of the other files.
 
 #### TIP: resuming a script
 
@@ -103,9 +100,15 @@ mpirun --pernode nextflow run assemble.nf -profile nscc -with-mpi [pipeline para
 
 _Note: Name of Nextflow process is written in parenthesis. Eg. (`cleanShortReads`)_
 
+### Genome assembly + evaluation: `main.nf`
+
+Perform genome assembly using [`assemble.nf`](#genome-assembly-assemblenf) followed by assembly evaluation using [`evaluateChromosome.nf`](#assembly-evaluation-evaluatechromosomenf-evaluateplasmidnf), if the assembly contains exactly 1 contig. If there is more than 1 contig, then evaluation will not be carried out. It will be up to the user to inspect the assembly and decide how they want to split the contigs for evaluation. Evaluation can be carried out using the [`evaluateChromosome.nf` and `evaluatePlasmid.nf` scripts](#evaluation).
+
+Command line parameters are the same as `assemble.nf`.
+
 ### Genome assembly: `assemble.nf`
 
-Assemble a genome from raw Illumina and Pacbio reads. Some basic statistics (number of contigs, size of contigs, and circularity of contigs) are given. More detailed evaluation can be done using [`evaluateChromosome.nf` and `evaluatePlasmid.nf`](#evaluation).
+Assemble a genome from raw Illumina and Pacbio reads. The final assembly will be in the file `assembly/pilon/final_pilon_assembly.fa`. Some basic statistics (number of contigs, size of contigs, and circularity of contigs) will be given in the file `assembly/assembly-summary.json`. 
 
 ``` sh
 nextflow run assemble.nf --illumina1 <path> --illumina2 <path> --pacbio <path> --outdir <path> \
@@ -128,7 +131,7 @@ nextflow run assemble.nf --illumina1 <path> --illumina2 <path> --pacbio <path> -
    - Racon is run up to 4 times or until there are no changes.
 1. If the assembly is potentially circular, then attempt circularisation using Circlator (`circlator`). Canu corrected long reads (`canuCorrect`) are given to Circlator as input.
    - An assembly is considered potentially circular if Flye identifies any circular contigs or there are multiple linear contigs.
-   - (Coming soon) You can force Circlator to always run / never run using `--forceCirclator` / `--noCirclator`.
+   - You can force Circlator to always run / never run using `--forceCirclator` / `--noCirclator`.
 1. Polish the assembly using Pilon (`pilonPolish`)
    - Pilon is run up to 6 times or until there are no changes.
 1. Save a summary of some basic statistics about the assembly (number of contigs, size of contigs, and circularity of contigs) to the file `assembly-summary.json` (`summariseAssembly`)
@@ -276,7 +279,7 @@ The most important statistics are also saved to a single summary document, `chro
   - `long_read_coverage/`
   - `prokka/`
   - `quast/`
-  - `checkm/` (for chromsome evaluation only)
+  - `checkm/` (for chromosome evaluation only)
   - `chromsome-summary.json` / `plasmid-summary.json`
   
 As with other scripts, `nextflow.command.sh`, `nextflow.command.log` and `nextflow.exitcode` is saved for every process. See [here](#other-outputs).
