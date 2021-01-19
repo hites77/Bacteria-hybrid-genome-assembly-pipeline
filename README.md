@@ -93,7 +93,7 @@ module load samtools/1.3
 module load bwa/0.7.13
 
 cd assembly-pipeline/ # cd to the directory containing this repository
-mpirun --pernode nextflow run assemble.nf -profile nscc -with-mpi [pipeline parameters]
+mpirun --pernode nextflow run main.nf -profile nscc -with-mpi [pipeline parameters]
 ```
 
 ## Scripts
