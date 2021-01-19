@@ -223,10 +223,17 @@ process shouldCirculariseOrNot {
         "$doNotCirculariseCmd"
     } else {
         """
-        if [[ `flye_possibly_circular.py $flyeDirectory` == yes ]]; then
+        isCircular=`flye_possibly_circular.py $flyeDirectory`
+        if [[ \$isCircular == yes ]]; then
             $toCirculariseCmd
         else
+        if [[ \$isCircular == no ]]; then
             $doNotCirculariseCmd
+        else
+            echo Unrecognised output:
+            echo \$isCircular
+            exit 1
+        fi
         fi
         """
     }
