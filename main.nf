@@ -37,7 +37,7 @@ process findReadyToEvaluate {
     script:
     """
     numberOfContigs=`bin/number_of_contigs.py $assemblyFa`
-    if [[ ! \$numberOfContigs =~ ^[0-9]+$ ]]; then
+    if [[ ! \$numberOfContigs =~ ^[0-9]+\$ ]]; then
         echo "Error in number_of_contigs.py:"
         echo \$numberOfContigs
         exit 1
