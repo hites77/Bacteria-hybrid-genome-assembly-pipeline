@@ -69,7 +69,7 @@ process longReadsCoverage {
 
 process prokkaAnnotate {
     publishDir "${params.outdir}/${pubDirPrefix}/${outdirs.prokkaAnnotate}", mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
-    publishDir "${params.outdir}/${pubDirPrefix}", mode: 'copy', saveAs: { it.endsWith('.gff') ? null : it }
+    publishDir "${params.outdir}/${pubDirPrefix}", mode: 'copy'
     conda params.condaEnvsDir + 'urops-assembly'
 
     input:
@@ -82,9 +82,7 @@ process prokkaAnnotate {
     path '.exitcode'
     path outdirs.prokkaAnnotate + 'prokka.gff', emit: gff
     path outdirs.prokkaAnnotate + 'prokka.txt', emit: txt
-    path outdirs.prokkaAnnotate + 'prokka.tsv'
-    path outdirs.prokkaAnnotate + 'prokka.log'
-    path outdirs.prokkaAnnotate + 'prokka.err'
+    path outdirs.prokkaAnnotate + '*'
 
     script:
     """

@@ -46,7 +46,7 @@ Nextflow has also been configured to generate several reports detailing the runt
 - `nextflow-timeline-<timestamp>.html`: a timeline showing the duration of each process. ([Example](https://www.nextflow.io/docs/latest/tracing.html#timeline-report))
 - `nextflow-trace-<timestamp>.tsv`: a table of information about each process. ([Example](https://www.nextflow.io/docs/latest/tracing.html#trace-report))
 
-These reports are saved to either the [outdir folder](#assemble-parameter-desc) or the directory that nextflow was launched from (if outdir is not defined).
+These reports are saved to either the [outdir folder](#assemble-parameter-desc) or the directory that nextflow was launched from (if outdir is not set).
 
 #### Recommended workflow:
 
