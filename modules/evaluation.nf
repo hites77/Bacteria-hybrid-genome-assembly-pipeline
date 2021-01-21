@@ -13,6 +13,7 @@ outdirs.longReadsCoverage = 'long_read_coverage/'
 outdirs.prokkaAnnotate = 'prokka/'
 outdirs.quastEvaluate = 'quast/'
 outdirs.checkmEvaluate = 'checkm/'
+outdirs.runKofamscan = 'kofamscan/'
 
 process shortReadsCoverage {
     publishDir "${params.outdir}/${pubDirPrefix}/${outdirs.shortReadsCoverage}" , mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
@@ -81,6 +82,7 @@ process prokkaAnnotate {
     path '.command.log'
     path '.exitcode'
     path outdirs.prokkaAnnotate + 'prokka.gff', emit: gff
+    path outdirs.prokkaAnnotate + 'prokka.faa', emit: faa
     path outdirs.prokkaAnnotate + 'prokka.txt', emit: txt
     path outdirs.prokkaAnnotate + '*'
 
@@ -132,6 +134,33 @@ process checkmEvaluate {
     mkdir input
     mv $assemblyFa input/assembly.fna
     checkm lineage_wf input ${outdirs.checkmEvaluate}
+    """
+}
+
+process runKofamscan {
+    conda params.condaEnvsDir + 'urops-kofamscan'
+    publishDir "${params.outdir}/${pubDirPrefix}/${outdirs.runKofamscan}", mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
+    publishDir "${params.outdir}/${pubDirPrefix}/${outdirs.runKofamscan}", mode: 'copy'
+
+
+    input:
+    val pubDirPrefix
+    path prokkaFaa
+
+    output:
+    path '.command.sh'
+    path '.command.log'
+    path '.exitcode'
+    path 'kofamscan_mapper.txt'
+    path 'kofamscan_results.tsv'
+
+    script:
+    """
+    # mapper format
+    exec_annotation -f mapper -o kofamscan_mapper.txt -p ${params.kofam_profile} -k ${params.kofam_kolist} --cpu=${params.threads} $prokkaFaa
+
+    # deatiled format (default)
+    exec_annotation -o kofamscan_results.tsv -p ${params.kofam_profile} -k ${params.kofam_kolist} -f detail-tsv -E 0.01 --cpu=${params.threads} $prokkaFaa
     """
 }
 
