@@ -251,6 +251,8 @@ The only difference between the chromosome and plasmid evaluation is CheckM is n
 
 #### Detailed description
 
+Before performing the analysis, the script checks that all the programs needed are working (`checkDependencies`).
+
 The following metrics about the given chromosome/plasmid assembly are recorded:
 
 - Coverage of short reads and long reads (`shortReadsCoverage`, `longReadsCoverage`)
