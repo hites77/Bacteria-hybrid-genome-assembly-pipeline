@@ -41,14 +41,16 @@ def download_accessions_helper(accessions, dest_dir):
 
 def download_accessions(accessions_file, dest_dir):
     # parse reference accessions file
-    accessions = open(accessions_file).readlines()
+    accessions = open(accessions_file)
     accessions = list(acc.strip() for acc in accessions)
 
     Path(dest_dir).mkdir(exist_ok=True, parents=True)
 
+    TEMP_DIR.mkdir(exist_ok=True, parents=True)
     for i in range(0, len(accessions), N):
         accs = accessions[i : i + N]
-        download_accessions(accs, dest_dir)
+        download_accessions_helper(accs, dest_dir)
+    TEMP_DIR.rmdir()
 
 
 if __name__ == "__main__":
