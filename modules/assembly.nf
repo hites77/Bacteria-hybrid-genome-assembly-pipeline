@@ -196,10 +196,10 @@ process pilonPolish {
 
     script:
     """
-    run_pilon.py --assembly $assemblyFa --reads1 $illumina1Fq --reads2 $illumina2Fq \
+    run_pilon.py --assembly "$assemblyFa" --reads1 "$illumina1Fq" --reads2 "$illumina2Fq" \
                 --out final_pilon_assembly.fa \
                 --maxiters $params.pilonMaxIters --threads $params.threads \
-                --args "$params.pilonArgs"
+                --memory $params.pilonMemory args "$params.pilonArgs"
     """
 }
 

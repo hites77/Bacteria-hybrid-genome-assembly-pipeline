@@ -123,7 +123,7 @@ process testPilon {
 
     script:
     """
-    java -Xmx13G -jar \$PILONJAR --genome $testAssembly --frags $testAsmIlluminaBam --changes --output pilon
+    java -Xmx2G -jar \$PILONJAR --genome $testAssembly --frags $testAsmIlluminaBam --changes --output pilon
     """
 }
 process testPlaton {

@@ -32,9 +32,9 @@ def preprocess(assembly_name, illumina1_fq, illumina2_fq, threads):
     return bam_file
 
 
-def run_pilon(assembly_name, bam_file, index, pilon_args):
+def run_pilon(assembly_name, bam_file, index, pilon_args, jvm_memory):
     run(
-        f"java -Xmx13G -jar $PILONJAR --genome {assembly_name} --frags {bam_file} --changes --output {PILON_PREFIX}{index} {pilon_args}"
+        f"java -Xmx{jvm_memory} -jar $PILONJAR --genome {assembly_name} --frags {bam_file} --changes --output {PILON_PREFIX}{index} {pilon_args}"
     )
 
 
@@ -65,7 +65,14 @@ def strip_pilon_suffix(input_fasta, output_fasta):
 
 
 def main(
-    assembly_name, output_assembly, illumina1_fq, illumina2_fq, threads, max_iters, pilon_args
+    assembly_name,
+    output_assembly,
+    illumina1_fq,
+    illumina2_fq,
+    threads,
+    max_iters,
+    pilon_args,
+    jvm_memory,
 ):
     if max_iters < 1:
         raise ValueError(f"{max_iters} should be at least 1")
@@ -74,7 +81,13 @@ def main(
     i = 0
     for i in range(1, max_iters + 1):
         bam_file = preprocess(assembly_name, illumina1_fq, illumina2_fq, threads)
-        run_pilon(assembly_name, bam_file, i, pilon_args)
+        run_pilon(
+            assembly_name=assembly_name,
+            bam_file=bam_file,
+            index=i,
+            pilon_args=pilon_args,
+            jvm_memory=jvm_memory,
+        )
         changes_file = Path(f"pilon{i}.changes")
         assembly_name = f"pilon{i}.fasta"
         if no_changes(changes_file):
@@ -116,6 +129,7 @@ PARSER_THREADS = "threads"
 PARSER_MAX_ITERS = "maxiters"
 PARSER_OUT_ASSEMBLY = "out"
 PARSER_PILON_ARGS = "args"
+PARSER_JVM_MEMORY = "memory"
 
 
 def make_parser():
@@ -152,6 +166,11 @@ def make_parser():
         default="",
         help="Command line args other than inputs, outputs and --changes to pass to pilon",
     )
+    parser.add_argument(
+        make_flag(PARSER_JVM_MEMORY),
+        required=True,
+        help="Amount of memory to allocate to the JVM via the java -xmx argument",
+    )
     return parser
 
 
@@ -168,4 +187,5 @@ if __name__ == "__main__":
         max_iters=args[PARSER_MAX_ITERS],
         output_assembly=args[PARSER_OUT_ASSEMBLY],
         pilon_args=args[PARSER_PILON_ARGS],
+        jvm_memory=args[PARSER_JVM_MEMORY],
     )
