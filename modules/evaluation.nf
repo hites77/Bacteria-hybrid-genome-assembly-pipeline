@@ -18,7 +18,7 @@ outdirs.runKofamscan = 'kofamscan/'
 process shortReadsCoverage {
     publishDir "${params.outdir}/${pubDirPrefix}/${outdirs.shortReadsCoverage}" , mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
     publishDir "${params.outdir}/${pubDirPrefix}/${outdirs.shortReadsCoverage}" , mode: 'copy'
-    conda params.condaEnvsDir + 'urops-assembly'
+    conda params.condaEnvsDir + '/urops-assembly'
     
     input:
     val pubDirPrefix
@@ -45,7 +45,7 @@ process shortReadsCoverage {
 process longReadsCoverage {
     publishDir "${params.outdir}/${pubDirPrefix}/${outdirs.longReadsCoverage}", mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
     publishDir "${params.outdir}/${pubDirPrefix}/${outdirs.longReadsCoverage}", mode: 'copy'
-    conda params.condaEnvsDir + 'urops-assembly'
+    conda params.condaEnvsDir + '/urops-assembly'
     
     input:
     val pubDirPrefix
@@ -71,7 +71,7 @@ process longReadsCoverage {
 process prokkaAnnotate {
     publishDir "${params.outdir}/${pubDirPrefix}/${outdirs.prokkaAnnotate}", mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
     publishDir "${params.outdir}/${pubDirPrefix}", mode: 'copy'
-    conda params.condaEnvsDir + 'urops-assembly'
+    conda params.condaEnvsDir + '/urops-assembly'
 
     input:
     val pubDirPrefix
@@ -95,7 +95,7 @@ process prokkaAnnotate {
 process quastEvaluate {
     publishDir "${params.outdir}/${pubDirPrefix}/${outdirs.quastEvaluate}", mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
     publishDir "${params.outdir}/${pubDirPrefix}", mode: 'copy'
-    conda params.condaEnvsDir + 'urops-assembly'
+    conda params.condaEnvsDir + '/urops-assembly'
     
     input:
     val pubDirPrefix
@@ -117,7 +117,7 @@ process quastEvaluate {
 process checkmEvaluate {
     publishDir "${params.outdir}/${pubDirPrefix}/${outdirs.checkmEvaluate}", mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
     publishDir "${params.outdir}/${pubDirPrefix}", mode: 'copy'
-    conda params.condaEnvsDir + 'urops-checkm'
+    conda params.condaEnvsDir + '/urops-checkm'
     
     input:
     val pubDirPrefix
@@ -138,7 +138,7 @@ process checkmEvaluate {
 }
 
 process runKofamscan {
-    conda params.condaEnvsDir + 'urops-kofamscan'
+    conda params.condaEnvsDir + '/urops-kofamscan'
     publishDir "${params.outdir}/${pubDirPrefix}/${outdirs.runKofamscan}", mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
     publishDir "${params.outdir}/${pubDirPrefix}/${outdirs.runKofamscan}", mode: 'copy'
 
@@ -166,7 +166,7 @@ process runKofamscan {
 
 process makeChromosomeSummary {
     publishDir params.outdir, mode: 'copy'
-    conda params.condaEnvsDir + 'urops-assembly'
+    conda params.condaEnvsDir + '/urops-assembly'
     
     input:
     path shortReadsCoverageDir
@@ -193,7 +193,7 @@ process makeChromosomeSummary {
 
 process makePlasmidSummary {
     publishDir params.outdir, mode: 'copy'
-    conda params.condaEnvsDir + 'urops-assembly'
+    conda params.condaEnvsDir + '/urops-assembly'
     
     input:
     path shortReadsCoverageDir
