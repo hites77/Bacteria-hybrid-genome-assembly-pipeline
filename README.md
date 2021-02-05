@@ -1,31 +1,97 @@
 # Genome assembly pipeline
 
+- [Introduction](#introduction)
+- [Quickstart](#quickstart)
+  * [1. Installation](#1-installation)
+  * [2. Run the pipeline](#2-run-the-pipeline)
+  * [3. View output files](#3-view-output-files)
+  * [4. Delete Nextflow's working directory](#4-delete-nextflows-working-directory)
+- [Scripts](#scripts)
+  * [Genome assembly + evaluation: `main.nf`](#genome-assembly--evaluation-mainnf)
+  * [Genome assembly: `assemble.nf`](#genome-assembly-assemblenf)
+    + [Detailed description](#detailed-description)
+    + [Output files](#output-files)
+    + [Parameter descriptions](#parameter-descriptions)
+  * [Assembly evaluation: `evaluateChromosome.nf`, `evaluatePlasmid.nf`](#assembly-evaluation-evaluatechromosomenf-evaluateplasmidnf)
+    + [Detailed description](#detailed-description-1)
+    + [Output files](#output-files-1)
+    + [Parameter descriptions](#parameter-descriptions-1)
+  * [Check all dependencies: `checkAllDependencies.nf`](#check-all-dependencies-checkalldependenciesnf)
+  * [Assess read quality: `assessReads.nf`](#assess-read-quality-assessreadsnf)
+- [Execution related parameters](#execution-related-parameters)
+- [Troubleshooting](#troubleshooting)
+  * [Resuming a script](#resuming-a-script)
+
+## Introduction
+
 This is a hybrid genome assembly pipeline for bacterial genomes written in [Nextflow](https://www.nextflow.io/).
+It requires (1) paired end Illumina short reads and (2) Pacbio long reads as input.
 
-## Quickstart
+Both genome assembly as well as assembly evaluation are performed.
+Some major features are: stringent, but configurable read filtering criteria; detection of plasmids and possible contamination; automated invocation of assembly evaluation when possible.
+The pipeline tries to set reasonable defaults as much as possible, but most parameters can be adjusted easily if need be via command line options.
 
-### 1. Installation
 
-1. Clone this repository
-1. Install Conda and [Nextflow](https://www.nextflow.io). Make sure the `nextflow` command is available in your path.
-1. Setup the conda environments from the YAML files in the `conda-envs` directory:
+## Requirements
+
+- Linux
+- Java (use Java version required by Nextflow)
+- [Nextflow](https://www.nextflow.io/) v20.10 or later
+- Conda. Preferably, use the current version, however older versions which use `conda activate` (rather than `source activate`) ought to work as well.
+- Git (optional, but recommended)
+    - Git will be used to clone the respository. It is also possible to download a zip of the respository instead, but it is preferable to use git as it is easier to download updates for the pipeline in the future.
+    
+## Tools used
+
+- Read filtering
+  - Long reads: Filtlong
+  - Short reads: BBduk
+- Genome assembly
+  - Assembly: Flye
+  - Polishing: Racon, Pilon
+  - Circularisation: Circlator
+  - Plasmid detection: Platon
+  - Misc: Minimap2, samtools, BWA
+- Assembly evaluation
+  - Read coverage: 
+    - Short reads: BBmap 
+    - Long reads: Minimap2, Pileup (from BBtools)
+  - Statistics: Quast
+  - Annotation: Prokka
+  - Completeness and contamination: Checkm
+
+## Running time
+
+- Genome assembly: 3-4 hours using `--threads 20` on a compute cluster with Intel Xeon E5-2690 v3 processors (2.60GHz-3.50GHz)
+- Assembly evaluation: 10-30 minutes using `--threads 20` on a compute cluster with Intel Xeon E5-2690  v3 processors (2.60GHz-3.50GHz)
+
+## Installation
+
+1. Install the dependencies listed in the [requirements](#requirements) section.
+2. Download/clone this repository.
+   If you have git, run the command below to clone the repository to the directory `assembly-pipeline`:
+``` sh
+git clone https://github.com/chloelee767/assembly-pipeline.git
+```
+Otherwise, download a zip file of the code and extract it to your desired location
+
+3. Create the conda environments from the YAML files in the `conda-envs` directory:
 
     a. Create the environments
 
    ```sh
+   # cd to the assembly-pipeline directory containing the code
+   cd path/to/assembly-pipeline # change this
+
    cd conda-envs
 
     # create the urops-assembly environment
-    conda env create -f assembly.yml # or assembly-nscc.yml
+    conda env create -f assembly.yml
     # create the urops-checkm environment
     conda env create -f checkm.yml
     # create the urops-circlator environment
     conda env create -f circlator.yml
    ```
-
-   Use `assembly-nscc.yml` instead of `assembly.yml` if you are using the NSCC Aspire 1 server.
-   The difference between `assembly.yml` and `assembly-nscc.yml` is that `assembly-nscc.yml` does not include BWA and Samtools, since they are already pre-installed on the server.
-   If you are using the NSCC server, remember to load the `bwa/0.7.13` and `samtools/1.3` modules before running the pipeline.
 
    b. Set the `PILONJAR` and `PLATONDB` environment variables for the urops-assembly environment:
 
@@ -43,92 +109,55 @@ This is a hybrid genome assembly pipeline for bacterial genomes written in [Next
 1. Download the databases needed by various tools:
    - **Platon database:** download the database at this [link](https://zenodo.org/record/4066768/files/db.tar.gz?download=1) and extract it to the file path specified for `PLATONDB`
 
-### 2. Run the pipeline
+## Quick usage
 
-The several different operations which can be run, such as genome assembly, assembly evaluation, read quality assessment and dependency checking.
-Each operation is located in a different `.nf` script in the root directory.
+### 1. Evaluate the reads
 
-A script is launched using the `nextflow run` command from the root directory, eg. `nextflow run main.nf`.
-Various command line arguments can be passed to a script (eg. `--illumina1`, `-work-dir`).
+Use Fastqc and Nanoplot (or any programs) to evaluate the quality of short reads and long reads (respectively) to decide if the [default criteria used for read filtering](#assemble-parameter-desc) are appropriate.
 
-Things to take note of:
+Fastqc and Nanoplot are included in the `urops-assembly` conda environment, so just run `conda activate urops-assembly` and you will be able to run the `fastqc` and `NanoPlot` commands.
+
+### 2. Assemble and evaluate the reads
+
+The command below runs the full pipeline (genome assembly + if possible, evaluation of the chromosome + any plasmids) with the default settings:
+
+``` sh
+cd assembly-pipeline/ # cd to the directory containing this repository
+nextflow run main.nf --illumina1 short_reads_1.fq.gz --illumina2 short_reads_2.fq.gz \ 
+    --pacbio long_reads.fq.gz --outdir assembly-results
+```
+
+If evaluation cannot be automatically carried out (eg. possibility of multiple bacterial genomes), a message will be printed to the command line. You will then have to invoke the evaluation script manually for each chromosome and plasmid using the [`evaluateChromosome.nf` and `evaluatePlasmid.nf`](#evaluation) scripts.
+
+#### Adjusting parameters
+
+Additional command line flags may be passed to adjust the criteria used for read filtering, based on step 1. 
+Check out the documentation [here](#assemble-parameter-desc).
+
+Depending on the machine you are using, some settings that commonly need to be adjusted are:
+- **Path to the directory containing the conda environments** (default: `~/.conda/envs/`). To change this, add this command line flag: `--condaEnvsDir <path>` eg. `--condaEnvsDir /opt/conda/envs/`.
+- **Memory to allocate to the JVM when running Pilon** (default: 13GB). To change this, add this command line flag: `--pilonMemory <memory>`. See the documentation for the `java -Xmx` command for valid values for `<memory>`.
+- **Number of threads** to use for multithreaded programs (default: 1). To change this, add this command line flag: `--threads <number>`.
+- **Directory where temporary files are stored** (default: `work/`). To change this, add this command line flag: `-work-dir <path>`. If you are running the pipeline on a cluster with limited permanent storage, you may want to store temporary files in the scratch/temp directory instead. 
+
+Some things to take note of:
 - Some flags begin with a single dash `-`, while some begin with a double dash `--`.
 - The scripts need to be launched from the root directory of this repository, in order for the configurations in the `nextflow.config` file to be applied.
 
-If you are submitting a job on the NSCC Aspire 1 server, here is a template for a job script which can be submitted using `qsub`:
+## Detailed documentation
 
-``` sh
-#!/bin/bash
-#PBS -q normal
-#PBS -P Personal
-#PBS -j oe
-#PBS -l select=1:ncpus=10:mpiprocs=10
-#PBS -l walltime=04:00:00
-module load java # nextflow is a JVM program
-module load openmpi # for mpirun command
-
-# used by pipeline
-module load samtools/1.3
-module load bwa/0.7.13
-
-cd $PBS_O_WORKDIR # cd to the directory qsub was run from
-cd assembly-pipeline/ # cd to the directory containing this repository
-mpirun --pernode nextflow run main.nf -with-mpi -profile nscc [pipeline parameters]
-```
-
-We running nextflow via the `mpirun` command in order to take advantage of the [OpenMPI standard](https://www.open-mpi.org/) for improved performance.
-You can read more about how Nextflow uses OpenMPI [here](https://www.nextflow.io/docs/latest/ignite.html?highlight=mpi#execution-with-mpi) and [here](https://www.nextflow.io/blog/2015/mpi-like-execution-with-nextflow.html).
-
-`[pipeline parameters]` should be replaced with the command line parameters for the `main.nf` script. The available parameters can be found in the following sections:
-
-- The [scripts section](#scripts): this includes the parameters for each script.
-- [Execution related parameters](#execution-related-parameters): this describes the parameters that are common to all scripts (eg. number of threads to use). This includes a description of the `-profile` parameter.
-
-Note that `main.nf` may be replaced with any other script, eg. `assemble.nf`. 
-
-Otherwise, if you are running the pipeline on a desktop computer, or don't wish to use OpenMPI just use the `nextflow run` command, eg.
-
-``` sh
-nextflow run main.nf [pipeline parameters]
-```
-
-### 3. View output files
-
-The output files generated by each script can be found in the [scripts section](#scripts).
-
-In addition, Nextflow has also been configured to generate several reports detailing the runtime, resources used and other information:
-
-- `nextflow-report-<timestamp>.html`: a comprehensive summary of the pipeline ([Example](https://www.nextflow.io/docs/latest/tracing.html#execution-report))
-- `nextflow-timeline-<timestamp>.html`: a timeline showing the duration of each process. ([Example](https://www.nextflow.io/docs/latest/tracing.html#timeline-report))
-- `nextflow-trace-<timestamp>.tsv`: a table of information about each process. ([Example](https://www.nextflow.io/docs/latest/tracing.html#trace-report))
-
-These reports are saved to either the [outdir folder](#assemble-parameter-desc) or the directory that nextflow was launched from (if outdir is not set).
-
-### 4. Delete Nextflow's working directory
-<a id="work-dir"></a>
-
-Nextflow stores temporary data in a working directory.
-This will basically include a copy of all the output files plus other intermediate files.
-This can be safely deleted after the pipeline finishes running, **unless** the pipeline failed and you want to [resume it](#resuming-a-script).
-
-Read more at: 
-
-- https://github.com/danrlu/Nextflow_cheatsheet#the-working-directory
-- https://www.nextflow.io/docs/latest/script.html?highlight=workdir#implicit-variables
-
-## Scripts
-
+### Documentation for Nextflow scripts
 This section contains a description of each Nextflow script, including what it does, its parameters and output files.
 
 _Note about format: In the detailed description section for each script, the name of Nextflow process is written in parenthesis. Eg. (`cleanShortReads`)_
 
-### Genome assembly + evaluation: `main.nf`
+#### Genome assembly + evaluation: `main.nf`
 
 Perform genome assembly using [`assemble.nf`](#genome-assembly-assemblenf) followed by assembly evaluation using [`evaluateChromosome.nf`](#assembly-evaluation-evaluatechromosomenf-evaluateplasmidnf), if the assembly contains exactly 1 contig. If there is more than 1 contig, then evaluation will not be carried out. It will be up to the user to inspect the assembly and decide how they want to split the contigs for evaluation. Evaluation can be carried out using the [`evaluateChromosome.nf` and `evaluatePlasmid.nf` scripts](#evaluation).
 
 Command line parameters are the same as `assemble.nf`.
 
-### Genome assembly: `assemble.nf`
+#### Genome assembly: `assemble.nf`
 
 Assemble a genome from raw Illumina and Pacbio reads. The final assembly will be in the file `assembly/pilon/final_pilon_assembly.fa`. Some basic statistics (number of contigs, size of contigs, and circularity of contigs) will be given in the file `assembly/assembly-summary.json`.
 
@@ -143,7 +172,7 @@ nextflow run assemble.nf --illumina1 <path> --illumina2 <path> --pacbio <path> -
     [--skipDepChecks] [--threads <number>] [-work-dir <path>] [--condaEnvsDir <path>] [-profile <profiles>]
 ```
 
-#### Detailed description
+##### Detailed description
 
 1. Check that all programs are working (`checkDependencies`).
 1. Clean short reads using Bbduk (`cleanShortReads`)
@@ -158,7 +187,7 @@ nextflow run assemble.nf --illumina1 <path> --illumina2 <path> --pacbio <path> -
    - Pilon is run up to 6 times or until there are no changes.
 1. Save a summary of some basic statistics about the assembly (number of contigs, size of contigs, and circularity of contigs) to the file `assembly-summary.json` (`summariseAssembly`)
 
-#### Output files
+##### Output files
 
 - `<outdir>/`
     - `assembly/`
@@ -194,7 +223,7 @@ In addition to the files created specifically by each process, the stdout, stder
 - `nextflow.command.log`: the scripts's stderr and stdout.
 - `nextflow.exitcode`: the script's exit code.
 
-#### Parameter descriptions
+##### Parameter descriptions
 
 <a id="assemble-parameter-desc"></a>
 
@@ -223,6 +252,7 @@ In addition to the files created specifically by each process, the stdout, stder
 - Pilon:
     - `--pilonMaxIters <number>`: Maximum number of iterations to run Pilon for. Default: 6.
     - `--pilonArgs <args>`: Arguments (other than inputs, outputs, and  `--changes`) to pass to Pilon. Default: none.
+    - `--pilonMemory <memory>`: Amount of memory to allocate to the JVM (via the `java -Xmx` flag) when running Pilon. See the documentation for the `java -Xmx` flag for valid values for `<memory>`. (default: `13G`)
 - Circularisation:
     - `--canuGenomeSize <genome size>`: When specified, force Canu to use this genome size. See the Canu documentation for genomeSize for valid values. Otherwise, calculate the genome size from the assembly. Default: not specified.
     - `--canuArgs <args>`: Arguments (other than inputs, outputs and genome size) to pass to Canu. Default: none.
@@ -233,7 +263,7 @@ In addition to the files created specifically by each process, the stdout, stder
 
 <a id="evaluation"></a>
 
-### Assembly evaluation: `evaluateChromosome.nf`, `evaluatePlasmid.nf`
+#### Assembly evaluation: `evaluateChromosome.nf`, `evaluatePlasmid.nf`
 
 To evaluate a chromosome:
 
@@ -249,7 +279,7 @@ To evaluate a plasmid, replace `evaluationChromosome.nf` with `evaluatePlasmid.n
 The only difference between the chromosome and plasmid evaluation is CheckM is not run for plasmids.
 
 
-#### Detailed description
+##### Detailed description
 
 Before performing the analysis, the script checks that all the programs needed are working (`checkDependencies`).
 
@@ -296,7 +326,7 @@ The most important statistics are also saved to a single summary document, `chro
 
 `errors` is a list of any errors encountered while creating the summary document (does not include the errors when running quast/prokka etc.)
 
-#### Output files
+##### Output files
 
 - `<outdir>/`
   - `short_read_coverage/`
@@ -308,7 +338,7 @@ The most important statistics are also saved to a single summary document, `chro
 
 As with other scripts, `nextflow.command.sh`, `nextflow.command.log` and `nextflow.exitcode` is saved for every process. Read more [here](#other-outputs).
 
-#### Parameter descriptions
+##### Parameter descriptions
 
 **Required parameters:**
 
@@ -323,7 +353,7 @@ As with other scripts, `nextflow.command.sh`, `nextflow.command.log` and `nextfl
 - See [execution related parameters](#execution-related-parameters)
 
 
-### Check all dependencies: `checkAllDependencies.nf`
+#### Check all dependencies: `checkAllDependencies.nf`
 
 If you want to manually check all the programs are working correctly:
 
@@ -333,11 +363,8 @@ nextflow run checkAllDependencies.nf [--threads <number>] [-work-dir <path>] [--
 
 See [execution related parameters](#execution-related-parameters) for descriptions of the optional parameters.
 
-### Assess read quality: `assessReads.nf`
 
-TODO document
-
-## Execution related parameters
+### Execution related parameters
 
 These are parameters which do not control what is run, only how the pipeline is run (eg. number of threads). For the most part, they are common to all scripts.
 
@@ -346,12 +373,12 @@ These are parameters which do not control what is run, only how the pipeline is 
 - `-work-dir`: (note that there is only a single `-` at the front) Path to Nextflow's working directory, which is where temporary files will be stored. Default: `./work/`.
     - Read more [here](#work-dir)
 - `--skipDepChecks`: Skip pre-pipeline dependency checks. Does not apply to the `checkAllDependencies.nf` script.
-- `-profile <profiles>`: (note that there is only a single `-` at the front) List of [Nextflow configuration profiles](https://www.nextflow.io/docs/latest/config.html#config-profiles) to apply. Options:
-    - `local`: Applies settings for working on a normal laptop/desktop computer: `--threads 4`.
-    - `nscc`: Applies settings for working on the NSCC Aspire 1 sever: `-work-dir ~/scratch/work/ --threads 20`.
-
 
 ## Troubleshooting
+
+### Help! Where are all my files inside the `work/` directory?
+
+TODO
 
 ### Resuming a script
 
@@ -361,3 +388,26 @@ Read more at:
 - https://www.nextflow.io/docs/latest/getstarted.html?highlight=resume#modify-and-resume
 - https://www.nextflow.io/blog/2019/demystifying-nextflow-resume.html
 - https://www.nextflow.io/blog/2019/troubleshooting-nextflow-resume.html
+
+### Dealing with plasmids
+
+TODO 
+
+## Tips 
+
+### Periodically clear Nextflow's work directory
+### Running the pipeline on clusters supporting OpenMPI
+
+TODO
+`mpirun --pernode nextflow run main.nf -with-mpi -profile nscc [pipeline parameters]`
+
+We running nextflow via the `mpirun` command in order to take advantage of the [OpenMPI standard](https://www.open-mpi.org/) for improved performance.
+You can read more about how Nextflow uses OpenMPI [here](https://www.nextflow.io/docs/latest/ignite.html?highlight=mpi#execution-with-mpi) and [here](https://www.nextflow.io/blog/2015/mpi-like-execution-with-nextflow.html).
+
+
+### Viewing the assembly graph
+
+
+### Repeated configs 
+
+(profiles, -c config)

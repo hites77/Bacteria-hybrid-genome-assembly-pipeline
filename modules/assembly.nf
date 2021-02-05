@@ -12,9 +12,9 @@ outdirs.circlator = 'assembly/circlator/'
 outdirs.pilonPolish = 'assembly/pilon/'
 
 process cleanShortReads {
-    publishDir params.outdir + outdirs.cleanShortReads, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
+    publishDir params.outdir + '/' + outdirs.cleanShortReads, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
     publishDir params.outdir, mode: 'copy'
-    conda params.condaEnvsDir + 'urops-assembly'
+    conda params.condaEnvsDir + '/urops-assembly'
 
     input:
     path illumina1Fq
@@ -41,9 +41,9 @@ process cleanShortReads {
 }
 
 process cleanLongReads {
-    publishDir params.outdir + outdirs.cleanLongReads, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
+    publishDir params.outdir + '/' + outdirs.cleanLongReads, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
     publishDir params.outdir, mode: 'copy'
-    conda params.condaEnvsDir + 'urops-assembly'
+    conda params.condaEnvsDir + '/urops-assembly'
 
     input:
     path pacbioFq
@@ -70,9 +70,9 @@ process cleanLongReads {
 }
 
 process flyeAssembly {
-    publishDir params.outdir + outdirs.flyeAssembly, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
+    publishDir params.outdir + '/' +outdirs.flyeAssembly, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
     publishDir params.outdir, mode: 'copy'
-    conda params.condaEnvsDir + 'urops-assembly'
+    conda params.condaEnvsDir + '/urops-assembly'
 
     input:
     path pacbioFq
@@ -96,9 +96,9 @@ process flyeAssembly {
 }
 
 process raconPolish {
-    publishDir params.outdir + outdirs.raconPolish, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
-    publishDir params.outdir + outdirs.raconPolish, mode: 'copy'
-    conda params.condaEnvsDir + 'urops-assembly'
+    publishDir params.outdir + '/' + outdirs.raconPolish, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
+    publishDir params.outdir + '/' + outdirs.raconPolish, mode: 'copy'
+    conda params.condaEnvsDir + '/urops-assembly'
 
     input:
     path assemblyFa
@@ -118,9 +118,9 @@ process raconPolish {
 }
 
 process canuCorrect {
-    publishDir params.outdir + outdirs.canuCorrect, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
+    publishDir params.outdir + '/' + outdirs.canuCorrect, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
     publishDir params.outdir, mode: 'copy'
-    conda params.condaEnvsDir + 'urops-assembly'
+    conda params.condaEnvsDir + '/urops-assembly'
     
     input:
     path pacbioFq
@@ -146,9 +146,9 @@ process canuCorrect {
 }
 
 process circlator {
-    publishDir params.outdir + outdirs.circlator, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
+    publishDir params.outdir + '/' + outdirs.circlator, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
     publishDir params.outdir, mode: 'copy'
-    conda params.condaEnvsDir + 'urops-circlator'
+    conda params.condaEnvsDir + '/urops-circlator'
     
     input:
     path assemblyFa
@@ -177,9 +177,9 @@ process circlator {
 }
 
 process pilonPolish {
-    publishDir params.outdir + outdirs.pilonPolish, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
-    publishDir params.outdir + outdirs.pilonPolish, mode: 'copy'
-    conda params.condaEnvsDir + 'urops-assembly'
+    publishDir params.outdir + '/' + outdirs.pilonPolish, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
+    publishDir params.outdir + '/' + outdirs.pilonPolish, mode: 'copy'
+    conda params.condaEnvsDir + '/urops-assembly'
     
     input:
     path assemblyFa
@@ -196,15 +196,15 @@ process pilonPolish {
 
     script:
     """
-    run_pilon.py --assembly $assemblyFa --reads1 $illumina1Fq --reads2 $illumina2Fq \
+    run_pilon.py --assembly "$assemblyFa" --reads1 "$illumina1Fq" --reads2 "$illumina2Fq" \
                 --out final_pilon_assembly.fa \
                 --maxiters $params.pilonMaxIters --threads $params.threads \
-                --args "$params.pilonArgs"
+                --memory $params.pilonMemory args "$params.pilonArgs"
     """
 }
 
 process shouldCirculariseOrNot {
-    conda params.condaEnvsDir + 'urops-assembly'
+    conda params.condaEnvsDir + '/urops-assembly'
 
     input:
     path assemblyFa
@@ -240,7 +240,7 @@ process shouldCirculariseOrNot {
 }
 
 process flyeCircularitySummary {
-    conda params.condaEnvsDir + 'urops-assembly'
+    conda params.condaEnvsDir + '/urops-assembly'
 
     input:
     path flyeDirectory
@@ -277,7 +277,7 @@ workflow circulariseIfNecessary {
 }
 
 process summariseAssembly {
-    conda params.condaEnvsDir + 'urops-assembly'
+    conda params.condaEnvsDir + '/urops-assembly'
     publishDir params.outdir + 'assembly/', mode: 'copy'
 
     input:

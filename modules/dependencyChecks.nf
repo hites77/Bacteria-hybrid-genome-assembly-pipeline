@@ -9,7 +9,7 @@ testAsmIlluminaBam = file('test-data/assembly-illumina.bam')
 testGff = file('test-data/assembly-prokka.gff')
 
 process testSamtools {
-    conda params.condaEnvsDir + 'urops-assembly'
+    conda params.condaEnvsDir + '/urops-assembly'
 
     output:
     path "input.bam.bai"
@@ -22,7 +22,7 @@ process testSamtools {
 }
 
 process testBwa {
-    conda params.condaEnvsDir + 'urops-assembly'
+    conda params.condaEnvsDir + '/urops-assembly'
     
     output:
     path "input.fa.amb"
@@ -39,7 +39,7 @@ process testBwa {
 }
 
 process testBbduk {
-    conda params.condaEnvsDir + 'urops-assembly'
+    conda params.condaEnvsDir + '/urops-assembly'
 
     output:
     path 'cleaned_illumina1.fq'
@@ -52,7 +52,7 @@ process testBbduk {
 }
 
 process testFiltlong {
-    conda params.condaEnvsDir + 'urops-assembly'
+    conda params.condaEnvsDir + '/urops-assembly'
 
     output:
     path 'cleaned_pacbio.fq'
@@ -64,7 +64,7 @@ process testFiltlong {
 }
 
 process testFlye {
-    conda params.condaEnvsDir + 'urops-assembly'
+    conda params.condaEnvsDir + '/urops-assembly'
 
     output:
     path 'flye/assembly.fasta'
@@ -77,7 +77,7 @@ process testFlye {
 }
 
 process testCirclator {
-    conda params.condaEnvsDir + 'urops-circlator'
+    conda params.condaEnvsDir + '/urops-circlator'
 
     output:
     path 'circlator-test/06.fixstart.fasta'
@@ -91,7 +91,7 @@ process testCirclator {
 }
 
 process testRacon {
-    conda params.condaEnvsDir + 'urops-assembly'
+    conda params.condaEnvsDir + '/urops-assembly'
 
     output:
     path 'test_racon_assembly.fa'
@@ -103,7 +103,7 @@ process testRacon {
 }
 
 process testCanu {
-    conda params.condaEnvsDir + 'urops-assembly'
+    conda params.condaEnvsDir + '/urops-assembly'
     
     output:
     path 'canu.correctedReads.fasta.gz'
@@ -115,7 +115,7 @@ process testCanu {
 }
 
 process testPilon {
-    conda params.condaEnvsDir + 'urops-assembly'
+    conda params.condaEnvsDir + '/urops-assembly'
 
     output:
     path 'pilon.fasta'
@@ -123,11 +123,11 @@ process testPilon {
 
     script:
     """
-    java -Xmx13G -jar \$PILONJAR --genome $testAssembly --frags $testAsmIlluminaBam --changes --output pilon
+    java -Xmx2G -jar \$PILONJAR --genome $testAssembly --frags $testAsmIlluminaBam --changes --output pilon
     """
 }
 process testPlaton {
-    conda params.condaEnvsDir + 'urops-assembly'
+    conda params.condaEnvsDir + '/urops-assembly'
 
     output:
     path 'assembly.chromosome.fasta'
@@ -141,7 +141,7 @@ process testPlaton {
 }
 
 process testPileup {
-    conda params.condaEnvsDir + 'urops-assembly'
+    conda params.condaEnvsDir + '/urops-assembly'
 
     output:
     path 'stats.txt'
@@ -154,7 +154,7 @@ process testPileup {
 }
 
 process testBbmap {
-    conda params.condaEnvsDir + 'urops-assembly'
+    conda params.condaEnvsDir + '/urops-assembly'
 
     output:
     path 'stats.txt'
@@ -167,7 +167,7 @@ process testBbmap {
 }
 
 process testProkka {
-    conda params.condaEnvsDir + 'urops-assembly'
+    conda params.condaEnvsDir + '/urops-assembly'
 
     output:
     path 'prokka-test/prokka.gff' // will be others, but just check 1 i guess
@@ -179,7 +179,7 @@ process testProkka {
 }
 
 process testQuast {
-    conda params.condaEnvsDir + 'urops-assembly'
+    conda params.condaEnvsDir + '/urops-assembly'
 
     output:
     path 'quast/transposed_report.tsv'
@@ -192,7 +192,7 @@ process testQuast {
 }
 
 process testMinimap2 {
-    conda params.condaEnvsDir + 'urops-assembly'
+    conda params.condaEnvsDir + '/urops-assembly'
 
     output:
     path 'minimap-test.sam'
@@ -204,7 +204,7 @@ process testMinimap2 {
 }
 
 process testCheckm {
-    conda params.condaEnvsDir + 'urops-checkm'
+    conda params.condaEnvsDir + '/urops-checkm'
 
     output:
     path 'checkm-results'
@@ -219,7 +219,7 @@ process testCheckm {
 }
 
 process testPython_assemblyEnv {
-    conda params.condaEnvsDir + 'urops-assembly'
+    conda params.condaEnvsDir + '/urops-assembly'
 
     output:
     path 'done'
@@ -232,7 +232,7 @@ process testPython_assemblyEnv {
 }
 
 process testPython_circlatorEnv {
-    conda params.condaEnvsDir + 'urops-circlator'
+    conda params.condaEnvsDir + '/urops-circlator'
 
     output:
     path 'done'
@@ -245,7 +245,7 @@ process testPython_circlatorEnv {
 }
 
 process testPython_checkmEnv {
-    conda params.condaEnvsDir + 'urops-checkm'
+    conda params.condaEnvsDir + '/urops-checkm'
 
     output:
     path 'done'
