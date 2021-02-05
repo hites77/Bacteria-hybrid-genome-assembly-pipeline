@@ -1,11 +1,36 @@
 # Genome assembly pipeline
 
+- [Introduction](#introduction)
+- [Quickstart](#quickstart)
+  * [1. Installation](#1-installation)
+  * [2. Run the pipeline](#2-run-the-pipeline)
+  * [3. View output files](#3-view-output-files)
+  * [4. Delete Nextflow's working directory](#4-delete-nextflows-working-directory)
+- [Scripts](#scripts)
+  * [Genome assembly + evaluation: `main.nf`](#genome-assembly--evaluation-mainnf)
+  * [Genome assembly: `assemble.nf`](#genome-assembly-assemblenf)
+    + [Detailed description](#detailed-description)
+    + [Output files](#output-files)
+    + [Parameter descriptions](#parameter-descriptions)
+  * [Assembly evaluation: `evaluateChromosome.nf`, `evaluatePlasmid.nf`](#assembly-evaluation-evaluatechromosomenf-evaluateplasmidnf)
+    + [Detailed description](#detailed-description-1)
+    + [Output files](#output-files-1)
+    + [Parameter descriptions](#parameter-descriptions-1)
+  * [Check all dependencies: `checkAllDependencies.nf`](#check-all-dependencies-checkalldependenciesnf)
+  * [Assess read quality: `assessReads.nf`](#assess-read-quality-assessreadsnf)
+- [Execution related parameters](#execution-related-parameters)
+- [Troubleshooting](#troubleshooting)
+  * [Resuming a script](#resuming-a-script)
+
+## Introduction
+
 This is a hybrid genome assembly pipeline for bacterial genomes written in [Nextflow](https://www.nextflow.io/).
 It requires (1) paired end Illumina short reads and (2) Pacbio long reads as input.
 
 Both genome assembly as well as assembly evaluation are performed.
 Some major features are: stringent, but configurable read filtering criteria; detection of plasmids and possible contamination; automated invocation of assembly evaluation when possible.
 The pipeline tries to set reasonable defaults as much as possible, but most parameters can be adjusted easily if need be via command line options.
+
 
 ## Requirements
 
