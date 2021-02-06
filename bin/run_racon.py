@@ -115,7 +115,7 @@ def test_main():
 
 # constants
 FLAG_IN_ASSEMBLY = "in_assembly"
-FLAG_IN_PACBIO = "in_pacbio"
+FLAG_IN_READS = "in_reads"
 FLAG_OUT_PREFIX = "out_prefix"
 FLAG_THREADS = "threads"
 FLAG_MAXITERS = "maxiters"
@@ -125,7 +125,7 @@ FLAG_RACON_ARGS = "args"
 def make_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument(make_flag(FLAG_IN_ASSEMBLY), required=True)
-    parser.add_argument(make_flag(FLAG_IN_PACBIO), required=True)
+    parser.add_argument(make_flag(FLAG_IN_READS), required=True)
     parser.add_argument(make_flag(FLAG_OUT_PREFIX), required=True)
     parser.add_argument(make_flag(FLAG_THREADS), required=True, type=int)
     parser.add_argument(make_flag(FLAG_MAXITERS), required=True, type=int)
@@ -140,7 +140,7 @@ if __name__ == "__main__":
     args = vars(parser.parse_args())
     main(
         assembly=args[FLAG_IN_ASSEMBLY],
-        pacbio=args[FLAG_IN_PACBIO],
+        pacbio=args[FLAG_IN_READS],
         output_prefix=args[FLAG_OUT_PREFIX],
         threads=args[FLAG_THREADS],
         max_iters=args[FLAG_MAXITERS],

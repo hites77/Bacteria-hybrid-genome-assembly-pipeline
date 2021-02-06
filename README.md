@@ -35,7 +35,7 @@
 ## Introduction
 
 This is a hybrid genome assembly pipeline for bacterial genomes written in [Nextflow](https://www.nextflow.io/).
-It requires (1) paired end Illumina short reads and (2) Pacbio long reads as input.
+It requires (1) paired end Illumina short reads and (2) either Pacbio or Nanopore long reads as input.
 
 Both genome assembly as well as assembly evaluation are performed.
 Some major features are: stringent, but configurable read filtering criteria; detection of plasmids and possible contamination; automated invocation of assembly evaluation when possible.
@@ -138,6 +138,8 @@ nextflow run main.nf --illumina1 short_reads_1.fq.gz --illumina2 short_reads_2.f
     --pacbio long_reads.fq.gz --outdir assembly-results
 ```
 
+If you are using Nanopore long reads instead, replace `--pacbio` with `--nanopore`.
+
 If evaluation cannot be automatically carried out (eg. possibility of multiple bacterial genomes), a message will be printed to the command line. You will then have to invoke the evaluation script manually for each chromosome and plasmid using the [`evaluateChromosome.nf` and `evaluatePlasmid.nf`](#evaluation) scripts.
 
 #### Adjusting parameters
@@ -173,7 +175,7 @@ Command line parameters are the same as `assemble.nf`.
 Assemble a genome from raw Illumina and Pacbio reads. The final assembly will be in the file `assembly/pilon/final_pilon_assembly.fa`. Some basic statistics (number of contigs, size of contigs, and circularity of contigs) will be given in the file `assembly/assembly-summary.json`.
 
 ``` sh
-nextflow run assemble.nf --illumina1 <path> --illumina2 <path> --pacbio <path> --outdir <path> \
+nextflow run assemble.nf --illumina1 <path> --illumina2 <path> [--pacbio | --nanopore] <path> --outdir <path> \
     [--shortReadsKeepPercent <percent>] [--shortReadsStartTrimq <percent>] [--shortReadsMinTrimq <percent>] \
     [--bbdukArgs <args>] [--filtlongArgs <args>] [--filtlongCheckThreshold <threshold>] \
     [--flyeArgs <args>] \
@@ -242,7 +244,9 @@ In addition to the files created specifically by each process, the stdout, stder
 
 - `--illumina1 <path>`: Path to 1st file for raw paired end Illumina reads. May be fastq or gzipped fastq.
 - `--illumina2 <path>`: Path to 2nd file for raw paired end Illumina reads. May be fastq or gzipped fastq.
-- `--pacbio <path>`: Path to the raw Pacbio reads. May be fastq or gzipped fastq.
+- Either:
+  - `--pacbio <path>`: Path to the raw Pacbio reads. May be fastq or gzipped fastq.
+  - `--nanopore <path>`: Path to the raw Nanopore reads. May be fastq or gzipped fastq.
 - `--outdir <path>`: Path to the output directory, which is where all output files will be stored.
 
 **Optional parameters:**
@@ -279,7 +283,7 @@ In addition to the files created specifically by each process, the stdout, stder
 To evaluate a chromosome:
 
 ``` sh
-nextflow run evaluateChromosome.nf --illumina1 <path> --illumina2 <path> --pacbio <path> --assembly <path> \
+nextflow run evaluateChromosome.nf --illumina1 <path> --illumina2 <path> --longReads <path> --assembly <path> \
     --outdir <path> \
     # execution-related params
     [--skipDepChecks] [--threads <number>] [-work-dir <path>] [--condaEnvsDir <path>]
@@ -355,7 +359,7 @@ As with other scripts, `nextflow.command.sh`, `nextflow.command.log` and `nextfl
 
 - `--illumina1 <path>`: Path to 1st file for **cleaned** paired end Illumina reads. May be fastq or gzipped fastq.
 - `--illumina2 <path>`: Path to 2nd file for **cleaned** paired end Illumina reads. May be fastq or gzipped fastq.
-- `--pacbio <path>`: Path to the **cleaned** Pacbio reads. May be fastq or gzipped fastq.
+- `--longReads <path>`: Path to the **cleaned** long reads. May be fastq or gzipped fastq.
 - `--assembly <path>`: Path to fasta file of chromosome/plasmid assembly.
 - `--outdir <path>`: Path to the output directory, which is where all output files will be stored.
 

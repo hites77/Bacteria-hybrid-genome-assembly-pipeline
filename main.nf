@@ -3,24 +3,10 @@ nextflow.enable.dsl=2
 include { checkAllDependencies } from './modules/dependencyChecks.nf'
 include { assembleGenome } from './modules/assembly.nf'
 include { evaluateChromosome } from './modules/evaluation.nf'
+include { validateParams } from './assemble.nf'
 
 // parameter validation
-
-if (params.assembly != null) {
-    log.info "The --assembly parameter will be ignored."
-}
-
-if (params.illumina1 == null || params.illumina2 == null || params.pacbio == null || params.outdir == null) {
-    log.error "--illumina1, --illumina 2, --pacbio, and --outdir are required parameters."
-    exit 1
-}
-
-if (params.forceCirclator && params.noCirclator) {
-    log.error "--forceCirclator and --noCirclator are mutually exclusive. Pass only 1 flag, or pass neither of them."
-    exit 1
-}
-
-params.outdir = params.outdir + "/"
+validateParams()
 
 // processes and workflows
 
@@ -75,9 +61,10 @@ workflow {
     // ensure assembly only begins after dependency checks are done
     rawIllumina1Fq = doneDepChecksChannel.map({ params.illumina1 })
     rawIllumina2Fq = doneDepChecksChannel.map({ params.illumina2 })
-    rawPacbioFq = doneDepChecksChannel.map({ params.pacbio })
+    rawLongReadsFq = depChecksDone.map({ params.pacbio == null ? params.nanopore : params.pacbio })
+    longReadType = params.pacbio == null ? LongRead.NANOPORE : LongRead.PACBIO
 
-    assembleGenome(rawIllumina1Fq, rawIllumina2Fq, rawPacbioFq)
+    assembleGenome(rawIllumina1Fq, rawIllumina2Fq, rawLongReadsFq, longReadType)
     findReadyToEvaluate(assembleGenome.out.assembly)
     evaluateChromosome('evaluation',
                        findReadyToEvaluate.out.ready,

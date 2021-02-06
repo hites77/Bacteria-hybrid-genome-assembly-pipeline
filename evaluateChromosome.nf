@@ -6,8 +6,8 @@ include { testPileup; testBbmap; testProkka; testQuast;
          testPython_checkmEnv } from './modules/dependencyChecks.nf'
 
 if (params.assembly == null || params.illumina1 == null || params.illumina2 == null
-    || params.pacbio == null || params.outdir == null) {
-    log.error "--assembly, --illumina1, --illumina2, --pacbio, and --outdir are required parameters."
+    || params.longReads == null || params.outdir == null) {
+    log.error "--assembly, --illumina1, --illumina2, --longReads, and --outdir are required parameters."
     exit 1
 }
 
@@ -46,7 +46,7 @@ workflow {
     chromosome = checkDependencies.out.map({ file(params.assembly) })
     illumina1 = checkDependencies.out.map({ file(params.illumina1) })
     illumina2 = checkDependencies.out.map({ file(params.illumina2) })
-    pacbio = checkDependencies.out.map({ file(params.pacbio) })
+    longReads = checkDependencies.out.map({ file(params.longReads) })
 
-    evaluateChromosome('', chromosome, illumina1, illumina2, pacbio)
+    evaluateChromosome('', chromosome, illumina1, illumina2, longReads)
 }

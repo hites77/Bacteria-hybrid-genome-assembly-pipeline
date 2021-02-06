@@ -1,5 +1,7 @@
 nextflow.enable.dsl=2
 
+import LongRead
+import LongReadTypeException
 include { getDirectory; mapToDirectory } from './commons.nf'
 
 outdirs = {}
@@ -46,7 +48,7 @@ process cleanLongReads {
     conda params.condaEnvsDir + '/urops-assembly'
 
     input:
-    path pacbioFq
+    path longReadsFq
     path illumina1Fq
     path illumina2Fq
 
@@ -54,7 +56,7 @@ process cleanLongReads {
     path '.command.sh'
     path '.command.log'
     path '.exitcode'
-    path outdirs.cleanLongReads + 'pacbio.fq', emit: fq
+    path outdirs.cleanLongReads + 'cleanedLongReads.fq', emit: fq
     path outdirs.cleanLongReads + "above_${params.filtlongCheckThreshold}_reads_removed.tsv", optional: true
 
     script:
@@ -62,8 +64,8 @@ process cleanLongReads {
     mkdir -p ${outdirs.cleanLongReads}
     filtlong -1 $illumina1Fq -2 $illumina2Fq \
         $params.filtlongArgs \
-        $pacbioFq > ${outdirs.cleanLongReads}/pacbio.fq
-    check_long_reads_removed.py --old $pacbioFq --new ${outdirs.cleanLongReads}/pacbio.fq \
+        $longReadsFq > ${outdirs.cleanLongReads}/cleanedLongReads.fq
+    check_long_reads_removed.py --old $longReadsFq --new ${outdirs.cleanLongReads}/cleanedLongReads.fq \
         --threshold $params.filtlongCheckThreshold \
         --tsv ${outdirs.cleanLongReads}/above_${params.filtlongCheckThreshold}_reads_removed.tsv
     """
@@ -75,7 +77,8 @@ process flyeAssembly {
     conda params.condaEnvsDir + '/urops-assembly'
 
     input:
-    path pacbioFq
+    path longReadFq
+    val longReadType
 
     output:
     path '.command.sh'
@@ -89,9 +92,11 @@ process flyeAssembly {
     path outdirs.flyeAssembly + 'params.json'
 
     script:
+    if (!(longReadType instanceof LongRead)) { throw new LongReadTypeException() }
+    inputFlag = longReadType == LongRead.PACBIO ? '--pacbio-raw' : '--nano-raw'
     """
     mkdir -p ${outdirs.flyeAssembly} # flye can only create 1 dir
-    flye --plasmids --threads $params.threads --pacbio-raw $pacbioFq -o ${outdirs.flyeAssembly} $params.flyeArgs
+    flye --plasmids --threads $params.threads $inputFlag $longReadFq -o ${outdirs.flyeAssembly} $params.flyeArgs
     """
 }
 
@@ -102,7 +107,7 @@ process raconPolish {
 
     input:
     path assemblyFa
-    path pacbioFq
+    path longReadsFq
 
     output:
     path '.command.sh'
@@ -113,7 +118,7 @@ process raconPolish {
 
     script:
     """
-    run_racon.py --in_assembly $assemblyFa --in_pacbio $pacbioFq --out_prefix final_racon --threads $params.threads --maxiters $params.raconMaxIters --args "$params.raconArgs"
+    run_racon.py --in_assembly $assemblyFa --in_reads $longReadsFq --out_prefix final_racon --threads $params.threads --maxiters $params.raconMaxIters --args "$params.raconArgs"
     """
 }
 
@@ -123,25 +128,28 @@ process canuCorrect {
     conda params.condaEnvsDir + '/urops-assembly'
     
     input:
-    path pacbioFq
+    path longReadsFq
     path assemblyFa
+    val longReadType
     
     output:
     path '.command.sh'
     path '.command.log'
     path '.exitcode'
-    path outdirs.canuCorrect + 'canu.correctedReads.fasta.gz', emit: pacbioFa
+    path outdirs.canuCorrect + 'canu.correctedReads.fasta.gz', emit: longReadsFa
     path outdirs.canuCorrect + 'canu.report'
     path outdirs.canuCorrect + 'canu.seqStore.err'
     path outdirs.canuCorrect + 'canu.seqStore.sh'
     path outdirs.canuCorrect + 'canu-logs/**'
 
     script:
+    if (!(longReadType instanceof LongRead)) { throw new LongReadTypeException() }
+    inputFlag = longReadType == LongRead.PACBIO ? '-pacbio' : '-nanopore'
     genomeSize = params.canuGenomeSize == null ?
         "\$(seq_length.py $assemblyFa | bases_to_string.py -)"
         : params.canuGenomeSize.toString()
     """
-    canu -correct -p canu -d $outdirs.canuCorrect genomeSize=$genomeSize -pacbio $pacbioFq useGrid=false $params.canuArgs
+    canu -correct -p canu -d $outdirs.canuCorrect genomeSize=$genomeSize $inputFlag $longReadsFq useGrid=false $params.canuArgs
     """
 }
 
@@ -152,7 +160,7 @@ process circlator {
     
     input:
     path assemblyFa
-    path pacbioFa
+    path longReadsFa
     
     output:
     path '.command.sh'
@@ -169,7 +177,7 @@ process circlator {
     mkdir -p ${outdirs.circlator}
 
     # circlator can't handle nested directories
-    circlator $params.circlatorArgs all $assemblyFa $pacbioFa circlator-temp
+    circlator $params.circlatorArgs all $assemblyFa $longReadsFa circlator-temp
     circlator_circularity_summary.py circlator-temp > ${outdirs.circlator}/circularity_summary.json
 
     mv circlator-temp/* ${outdirs.circlator}
@@ -259,14 +267,17 @@ workflow circulariseIfNecessary {
     take:
     assembly
     longReads
+    longReadType
     flyeDirectory
     
     main:
+    if (!(longReadType instanceof LongRead)) { throw new LongReadTypeException() }
+
     shouldCirculariseOrNot(assembly, flyeDirectory)
 
     // if should circularise
-    canuCorrect(longReads, shouldCirculariseOrNot.out.toCircularise)
-    circlator(assembly, canuCorrect.out.pacbioFa)
+    canuCorrect(longReads, longReadType, shouldCirculariseOrNot.out.toCircularise)
+    circlator(assembly, canuCorrect.out.longReadsFa)
 
     // if should not circularise
     flyeCircularitySummary(flyeDirectory, shouldCirculariseOrNot.out.doNotCircularise)
@@ -297,24 +308,28 @@ workflow assembleGenome {
     take:
     rawIllumina1Fq
     rawIllumina2Fq
-    rawPacbioFq
+    rawLongReadsFq
+    longReadType
 
     main:
+    if (!(longReadType instanceof LongRead)) { throw new LongReadTypeException() }
+
     cleanShortReads(rawIllumina1Fq, rawIllumina2Fq)
 
     cleanedShort1 = cleanShortReads.out.fq1
     cleanedShort2 = cleanShortReads.out.fq2
 
-    cleanLongReads(rawPacbioFq, cleanedShort1, cleanedShort2)
+    cleanLongReads(rawLongReadsFq, cleanedShort1, cleanedShort2)
 
     cleanedLong = cleanLongReads.out.fq
 
-    flyeAssembly(cleanedLong)
+    flyeAssembly(cleanedLong, longReadType)
     flyeDirectory = flyeAssembly.out.assemblyFa.map{ file(it.parent) } // HACK flye directory
 
     raconPolish(flyeAssembly.out.assemblyFa, cleanedLong)
     circulariseIfNecessary(raconPolish.out.assemblyFa,
                            cleanedLong,
+                           longReadType,
                            flyeDirectory) 
     pilonPolish(circulariseIfNecessary.out.assembly, cleanedShort1, cleanedShort2)
 
