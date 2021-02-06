@@ -1,6 +1,5 @@
 nextflow.enable.dsl=2
 
-include { checkAllDependencies } from './modules/dependencyChecks.nf'
 include { assembleGenome } from './modules/assembly.nf'
 include { evaluateChromosome } from './modules/evaluation.nf'
 include { validateParams } from './assemble.nf'
@@ -49,19 +48,9 @@ Decide how you want to split the contigs and perform evaluation manually using e
 }
 
 workflow {
-    def doneDepChecksChannel
-    if (params.skipDepChecks) {
-        doneDepChecksChannel = Channel.of(true)
-    } else {
-        checkAllDependencies()
-        doneDepChecksChannel = checkAllDependencies.out
-    }
-
-
-    // ensure assembly only begins after dependency checks are done
-    rawIllumina1Fq = doneDepChecksChannel.map({ params.illumina1 })
-    rawIllumina2Fq = doneDepChecksChannel.map({ params.illumina2 })
-    rawLongReadsFq = depChecksDone.map({ params.pacbio == null ? params.nanopore : params.pacbio })
+    rawIllumina1Fq = file(params.illumina1)
+    rawIllumina2Fq = file(params.illumina2)
+    rawLongReadsFq = file(params.pacbio == null ? params.nanopore : params.pacbio)
     longReadType = params.pacbio == null ? LongRead.NANOPORE : LongRead.PACBIO
 
     assembleGenome(rawIllumina1Fq, rawIllumina2Fq, rawLongReadsFq, longReadType)

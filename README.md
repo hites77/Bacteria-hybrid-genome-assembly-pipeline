@@ -20,7 +20,7 @@
       - [Detailed description](#detailed-description-1)
       - [Output files](#output-files-1)
       - [Parameter descriptions](#parameter-descriptions-1)
-    + [Check all dependencies: `checkAllDependencies.nf`](#check-all-dependencies-checkalldependenciesnf)
+    + [Check all dependencies: `checkAllDependencies.nf`](#check-dependencies-checkdependenciesnf)
   * [Execution related parameters](#execution-related-parameters)
 - [Troubleshooting](#troubleshooting)
   * [Help! Where are all my files inside the `work/` directory?](#help-where-are-all-my-files-inside-the-work-directory)
@@ -120,6 +120,12 @@ Otherwise, download a zip file of the code and extract it to your desired locati
 1. Download the databases needed by various tools:
    - **Platon database:** download the database at this [link](https://zenodo.org/record/4066768/files/db.tar.gz?download=1) and extract it to the file path specified for `PLATONDB`
 
+1. Check that all programs have been installed correctly:
+    ```sh
+    nextflow run checkDependencies.nf
+    ```
+    If your conda environments are stored somewhere other than `~/.conda/envs`, add the argument `--condaEnvsDir <path>`, replacing `<path>` with the path to the conda environments. 
+
 ## Quick usage
 
 ### 1. Evaluate the reads
@@ -182,12 +188,11 @@ nextflow run assemble.nf --illumina1 <path> --illumina2 <path> [--pacbio | --nan
     [--raconMaxIters <number>] [--raconArgs <args>] [--pilonMaxIters <number>] [--pilonArgs <args>] \
     [--canuGenomeSize <size>] [--canuArgs <args>] [--circlatorArgs <args>] [--forceCirclator | --noCirclator] \
     # execution-related params
-    [--skipDepChecks] [--threads <number>] [-work-dir <path>] [--condaEnvsDir <path>]
+    [--threads <number>] [-work-dir <path>] [--condaEnvsDir <path>]
 ```
 
 ##### Detailed description
 
-1. Check that all programs are working (`checkDependencies`).
 1. Clean short reads using Bbduk (`cleanShortReads`)
 1. Clean long reads using Filtlong (`cleanLongReads`)
 1. Form an initial assembly using the long reads with Flye (`flyeAssembly`)
@@ -286,7 +291,7 @@ To evaluate a chromosome:
 nextflow run evaluateChromosome.nf --illumina1 <path> --illumina2 <path> --longReads <path> --assembly <path> \
     --outdir <path> \
     # execution-related params
-    [--skipDepChecks] [--threads <number>] [-work-dir <path>] [--condaEnvsDir <path>]
+    [--threads <number>] [-work-dir <path>] [--condaEnvsDir <path>]
 ```
 
 To evaluate a plasmid, replace `evaluationChromosome.nf` with `evaluatePlasmid.nf`.
@@ -295,8 +300,6 @@ The only difference between the chromosome and plasmid evaluation is CheckM is n
 
 
 ##### Detailed description
-
-Before performing the analysis, the script checks that all the programs needed are working (`checkDependencies`).
 
 The following metrics about the given chromosome/plasmid assembly are recorded:
 
@@ -368,12 +371,10 @@ As with other scripts, `nextflow.command.sh`, `nextflow.command.log` and `nextfl
 - See [execution related parameters](#execution-related-parameters)
 
 
-#### Check all dependencies: `checkAllDependencies.nf`
-
-If you want to manually check all the programs are working correctly:
+#### Check dependencies: `checkDependencies.nf`
 
 ``` sh
-nextflow run checkAllDependencies.nf [--threads <number>] [-work-dir <path>] [--condaEnvsDir <path>]
+nextflow run checkDependencies.nf [-work-dir <path>] [--condaEnvsDir <path>]
 ```
 
 See [execution related parameters](#execution-related-parameters) for descriptions of the optional parameters.
@@ -387,7 +388,6 @@ These are parameters which do not control what is run, only how the pipeline is 
 - `--condaEnvsDir <path>`: Path to where the conda environments are stored. Default: `~/.conda/envs/`.
 - `-work-dir`: (note that there is only a single `-` at the front) Path to Nextflow's working directory, which is where temporary files will be stored. Default: `./work/`.
     - Read more [here](#work-dir)
-- `--skipDepChecks`: Skip pre-pipeline dependency checks. Does not apply to the `checkAllDependencies.nf` script.
 
 ## Troubleshooting
 
