@@ -56,6 +56,7 @@ The pipeline tries to set reasonable defaults as much as possible, but most para
 - Read filtering
   - Long reads: Filtlong
   - Short reads: BBduk
+- Read correction: Canu (only used for Circlator)
 - Genome assembly
   - Assembly: Flye
   - Polishing: Racon, Pilon
@@ -179,7 +180,7 @@ nextflow run assemble.nf --illumina1 <path> --illumina2 <path> --pacbio <path> -
     [--raconMaxIters <number>] [--raconArgs <args>] [--pilonMaxIters <number>] [--pilonArgs <args>] \
     [--canuGenomeSize <size>] [--canuArgs <args>] [--circlatorArgs <args>] [--forceCirclator | --noCirclator] \
     # execution-related params
-    [--skipDepChecks] [--threads <number>] [-work-dir <path>] [--condaEnvsDir <path>] [-profile <profiles>]
+    [--skipDepChecks] [--threads <number>] [-work-dir <path>] [--condaEnvsDir <path>]
 ```
 
 ##### Detailed description
@@ -281,7 +282,7 @@ To evaluate a chromosome:
 nextflow run evaluateChromosome.nf --illumina1 <path> --illumina2 <path> --pacbio <path> --assembly <path> \
     --outdir <path> \
     # execution-related params
-    [--skipDepChecks] [--threads <number>] [-work-dir <path>] [--condaEnvsDir <path>] [-profile <profiles>]
+    [--skipDepChecks] [--threads <number>] [-work-dir <path>] [--condaEnvsDir <path>]
 ```
 
 To evaluate a plasmid, replace `evaluationChromosome.nf` with `evaluatePlasmid.nf`.
@@ -368,7 +369,7 @@ As with other scripts, `nextflow.command.sh`, `nextflow.command.log` and `nextfl
 If you want to manually check all the programs are working correctly:
 
 ``` sh
-nextflow run checkAllDependencies.nf [--threads <number>] [-work-dir <path>] [--condaEnvsDir <path>] [-profile <profiles>]
+nextflow run checkAllDependencies.nf [--threads <number>] [-work-dir <path>] [--condaEnvsDir <path>]
 ```
 
 See [execution related parameters](#execution-related-parameters) for descriptions of the optional parameters.
@@ -409,15 +410,15 @@ TODO
 ### Running the pipeline on clusters supporting OpenMPI
 
 TODO
-`mpirun --pernode nextflow run main.nf -with-mpi -profile nscc [pipeline parameters]`
+`mpirun --pernode nextflow run main.nf -with-mpi [pipeline parameters]`
 
 We running nextflow via the `mpirun` command in order to take advantage of the [OpenMPI standard](https://www.open-mpi.org/) for improved performance.
 You can read more about how Nextflow uses OpenMPI [here](https://www.nextflow.io/docs/latest/ignite.html?highlight=mpi#execution-with-mpi) and [here](https://www.nextflow.io/blog/2015/mpi-like-execution-with-nextflow.html).
 
 
 ### Viewing the assembly graph
-
+TODO
 
 ### Repeated configs 
-
+TODO
 (profiles, -c config)
