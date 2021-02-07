@@ -129,8 +129,8 @@ process canuCorrect {
     
     input:
     path longReadsFq
-    path assemblyFa
     val longReadType
+    path assemblyFa
     
     output:
     path '.command.sh'
