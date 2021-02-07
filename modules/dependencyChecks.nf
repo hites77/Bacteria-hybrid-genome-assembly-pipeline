@@ -295,7 +295,7 @@ workflow checkAllDependencies {
              testPileup.out[0], testProkka.out[0],
              testQuast.out[0], testCirclator.out[0],
              testCheckm.out[0], testPython_assemblyEnv.out[0],
-             testPython_circlatorEnv.out[0], testPython_checkmEnv.out[0]
+             testPython_circlatorEnv.out[0], testPython_checkmEnv.out[0],
         )
         .toList()
         .map({ true })
