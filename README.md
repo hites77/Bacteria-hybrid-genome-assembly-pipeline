@@ -1,9 +1,9 @@
 # Genome assembly pipeline
 
 - [Introduction](#introduction)
-- [Requirements](#requirements)
 - [Tools used](#tools-used)
 - [Running time](#running-time)
+- [Requirements](#requirements)
 - [Installation](#installation)
 - [Quick usage](#quick-usage)
   * [1. Evaluate the reads](#1-evaluate-the-reads)
@@ -13,14 +13,14 @@
   * [Documentation for Nextflow scripts](#documentation-for-nextflow-scripts)
     + [Genome assembly + evaluation: `main.nf`](#genome-assembly--evaluation-mainnf)
     + [Genome assembly: `assemble.nf`](#genome-assembly-assemblenf)
+      - [Parameter descriptions](#parameter-descriptions)
       - [Detailed description](#detailed-description)
       - [Output files](#output-files)
-      - [Parameter descriptions](#parameter-descriptions)
     + [Assembly evaluation: `evaluateChromosome.nf`, `evaluatePlasmid.nf`](#assembly-evaluation-evaluatechromosomenf-evaluateplasmidnf)
+      - [Parameter descriptions](#parameter-descriptions-1)
       - [Detailed description](#detailed-description-1)
       - [Output files](#output-files-1)
-      - [Parameter descriptions](#parameter-descriptions-1)
-    + [Check all dependencies: `checkAllDependencies.nf`](#check-dependencies-checkdependenciesnf)
+    + [Check dependencies: `checkDependencies.nf`](#check-dependencies-checkdependenciesnf)
   * [Execution related parameters](#execution-related-parameters)
 - [Troubleshooting](#troubleshooting)
   * [Help! Where are all my files inside the `work/` directory?](#help-where-are-all-my-files-inside-the-work-directory)
@@ -34,29 +34,19 @@
 
 ## Introduction
 
-This is a hybrid genome assembly pipeline for bacterial genomes written in [Nextflow](https://www.nextflow.io/).
+This is a hybrid genome assembly pipeline for bacterial genomes written in Nextflow.
 It requires (1) paired end Illumina short reads and (2) either Pacbio or Nanopore long reads as input.
 
 Both genome assembly as well as assembly evaluation are performed.
 Some major features are: stringent, but configurable read filtering criteria; detection of plasmids and possible contamination; automated invocation of assembly evaluation when possible.
 The pipeline tries to set reasonable defaults as much as possible, but most parameters can be adjusted easily if need be via command line options.
-
-
-## Requirements
-
-- Linux
-- Java (use Java version required by Nextflow)
-- [Nextflow](https://www.nextflow.io/) v20.10 or later
-- Conda. Preferably, use the current version, however older versions which use `conda activate` (rather than `source activate`) ought to work as well.
-- Git (optional, but recommended)
-    - Git will be used to clone the respository. It is also possible to download a zip of the respository instead, but it is preferable to use git as it is easier to download updates for the pipeline in the future.
     
 ## Tools used
 
 - Read filtering
   - Long reads: Filtlong
   - Short reads: BBduk
-- Read correction: Canu (only used for Circlator)
+- Read correction: Canu (only used to generate the input for Circlator)
 - Genome assembly
   - Assembly: Flye
   - Polishing: Racon, Pilon
@@ -74,7 +64,16 @@ The pipeline tries to set reasonable defaults as much as possible, but most para
 ## Running time
 
 - Genome assembly: 3-4 hours using `--threads 20` on a compute cluster with Intel Xeon E5-2690 v3 processors (2.60GHz-3.50GHz)
-- Assembly evaluation: 10-30 minutes using `--threads 20` on a compute cluster with Intel Xeon E5-2690  v3 processors (2.60GHz-3.50GHz)
+- Assembly evaluation: 10-30 minutes using `--threads 20` on a compute cluster with Intel Xeon E5-2690 v3 processors (2.60GHz-3.50GHz)
+
+## Requirements
+
+- Linux
+- Java (use Java version required by Nextflow)
+- [Nextflow](https://www.nextflow.io/) v20.10 or later
+- Conda. Preferably, use the current version, however older versions which use `conda activate` (rather than `source activate`) ought to work as well.
+- Git (optional, but recommended)
+    - Git will be used to clone the respository. It is also possible to download a zip of the respository instead, but it is preferable to use git as it is easier to download updates for the pipeline in the future.
 
 ## Installation
 
@@ -148,6 +147,8 @@ If you are using Nanopore long reads instead, replace `--pacbio` with `--nanopor
 
 If evaluation cannot be automatically carried out (eg. possibility of multiple bacterial genomes), a message will be printed to the command line. You will then have to invoke the evaluation script manually for each chromosome and plasmid using the [`evaluateChromosome.nf` and `evaluatePlasmid.nf`](#evaluation) scripts.
 
+It is also possible to run just genome assembly, without evaluation, using the [`assemble.nf` script](#genome-assembly-assemblenf).
+
 #### Adjusting parameters
 
 Additional command line flags may be passed to adjust the criteria used for read filtering, based on step 1. 
@@ -166,6 +167,7 @@ Some things to take note of:
 ## Detailed documentation
 
 ### Documentation for Nextflow scripts
+
 This section contains a description of each Nextflow script, including what it does, its parameters and output files.
 
 _Note about format: In the detailed description section for each script, the name of Nextflow process is written in parenthesis. Eg. (`cleanShortReads`)_
@@ -190,6 +192,46 @@ nextflow run assemble.nf --illumina1 <path> --illumina2 <path> [--pacbio | --nan
     # execution-related params
     [--threads <number>] [-work-dir <path>] [--condaEnvsDir <path>]
 ```
+
+##### Parameter descriptions
+
+<a id="assemble-parameter-desc"></a>
+
+**Required parameters:**
+
+- `--illumina1 <path>`: Path to 1st file for raw paired end Illumina reads. May be fastq or gzipped fastq.
+- `--illumina2 <path>`: Path to 2nd file for raw paired end Illumina reads. May be fastq or gzipped fastq.
+- Long reads. Must be one of:
+  - `--pacbio <path>`: Path to the raw Pacbio reads. May be fastq or gzipped fastq.
+  - `--nanopore <path>`: Path to the raw Nanopore reads. May be fastq or gzipped fastq.
+- `--outdir <path>`: Path to the output directory, which is where all output files will be stored.
+
+**Optional parameters:**
+
+- Short read filtering and cleaning:
+    - `--shortReadsKeepPercent <percent>`: Ensure at least X% of reads are kept. Default: 80.
+    - `--shortReadsStartTrimq <trimq>`: Highest possible `trimq` value for bbduk. Default: 40.
+    - `--shortReadsMinTrimq <trimq>`: Lowest permissible `trimq` value for bbduk. Default: 28.
+    - `--bbdukArgs <args>`: Arguments (other than inputs, outputs and `trimq`) to pass to bbduk. Default: `qtrim=rl minlength=40`.
+- Long read filtering and cleaning:
+    - `--filtlongArgs <args>`: Arguments (other than inputs and outputs) to pass to Filtlong. Default: `--min_length 1000 --keep_percent 90 --trim --split 500 --mean_q_weight 10`.
+    - `--filtlongCheckThreshold <number>[k|m|g]`: Flag reads above the given length (eg. 10, 10k, 10m, 10g) which were removed by Filtlong. The number of these reads will be printed to stdout and the IDs and lengths of these reads will be saved to a TSV file. Default: 10k.
+- Flye:
+    - `--flyeArgs <args>`: Arguments (other than inputs, outputs, threads and `--plasmids`) to pass to Flye. Default: none.
+- Racon:
+    - `--raconMaxIters <number>`: Maximum number of iterations to run Racon for. Default: 4.
+    - `--raconArgs <args>`: Arguments (other than inputs, outputs, and threads) to pass to Racon. Default: `-m 8 -x -6 -g -8 -w 500`.
+- Pilon:
+    - `--pilonMaxIters <number>`: Maximum number of iterations to run Pilon for. Default: 6.
+    - `--pilonArgs <args>`: Arguments (other than inputs, outputs, and  `--changes`) to pass to Pilon. Default: none.
+    - `--pilonMemory <memory>`: Amount of memory to allocate to the JVM (via the `java -Xmx` flag) when running Pilon. See the documentation for the `java -Xmx` flag for valid values for `<memory>`. (default: `13G`)
+- Circularisation:
+    - `--canuGenomeSize <genome size>`: When specified, force Canu to use this genome size. See the Canu documentation for genomeSize for valid values. Otherwise, calculate the genome size from the assembly. Default: not specified.
+    - `--canuArgs <args>`: Arguments (other than inputs, outputs and genome size) to pass to Canu. Default: none.
+    - `--circlatorArgs <args>`: Arguments (other than inputs and outputs) to pass to Circlator. Default: none.
+    - `--forceCirclator`: Force Circlator to be used, regardless of the state of the Flye assembly.
+    - `--noCirclator`: Do not use Circlator, regardless of the state of the Flye assembly.
+- Also see [execution related parameters](#execution-related-parameters)
 
 ##### Detailed description
 
@@ -241,46 +283,6 @@ In addition to the files created specifically by each process, the stdout, stder
 - `nextflow.command.log`: the scripts's stderr and stdout.
 - `nextflow.exitcode`: the script's exit code.
 
-##### Parameter descriptions
-
-<a id="assemble-parameter-desc"></a>
-
-**Required parameters:**
-
-- `--illumina1 <path>`: Path to 1st file for raw paired end Illumina reads. May be fastq or gzipped fastq.
-- `--illumina2 <path>`: Path to 2nd file for raw paired end Illumina reads. May be fastq or gzipped fastq.
-- Either:
-  - `--pacbio <path>`: Path to the raw Pacbio reads. May be fastq or gzipped fastq.
-  - `--nanopore <path>`: Path to the raw Nanopore reads. May be fastq or gzipped fastq.
-- `--outdir <path>`: Path to the output directory, which is where all output files will be stored.
-
-**Optional parameters:**
-
-- Short read filtering and cleaning:
-    - `--shortReadsKeepPercent <percent>`: Ensure at least X% of reads are kept. Default: 80.
-    - `--shortReadsStartTrimq <trimq>`: Highest possible `trimq` value for bbduk. Default: 40.
-    - `--shortReadsMinTrimq <trimq>`: Lowest permissible `trimq` value for bbduk. Default: 28.
-    - `--bbdukArgs <args>`: Arguments (other than inputs, outputs and `trimq`) to pass to bbduk. Default: `qtrim=rl minlength=40`.
-- Long read filtering and cleaning:
-    - `--filtlongArgs <args>`: Arguments (other than inputs and outputs) to pass to Filtlong. Default: `--min_length 1000 --keep_percent 90 --trim --split 500 --mean_q_weight 10`.
-    - `--filtlongCheckThreshold <number>[k|m|g]`: Flag reads above the given length (eg. 10, 10k, 10m, 10g) which were removed by Filtlong. The number of these reads will be printed to stdout and the IDs and lengths of these reads will be saved to a TSV file. Default: 10k.
-- Flye:
-    - `--flyeArgs <args>`: Arguments (other than inputs, outputs, threads and `--plasmids`) to pass to Flye. Default: none.
-- Racon:
-    - `--raconMaxIters <number>`: Maximum number of iterations to run Racon for. Default: 4.
-    - `--raconArgs <args>`: Arguments (other than inputs, outputs, and threads) to pass to Racon. Default: `-m 8 -x -6 -g -8 -w 500`.
-- Pilon:
-    - `--pilonMaxIters <number>`: Maximum number of iterations to run Pilon for. Default: 6.
-    - `--pilonArgs <args>`: Arguments (other than inputs, outputs, and  `--changes`) to pass to Pilon. Default: none.
-    - `--pilonMemory <memory>`: Amount of memory to allocate to the JVM (via the `java -Xmx` flag) when running Pilon. See the documentation for the `java -Xmx` flag for valid values for `<memory>`. (default: `13G`)
-- Circularisation:
-    - `--canuGenomeSize <genome size>`: When specified, force Canu to use this genome size. See the Canu documentation for genomeSize for valid values. Otherwise, calculate the genome size from the assembly. Default: not specified.
-    - `--canuArgs <args>`: Arguments (other than inputs, outputs and genome size) to pass to Canu. Default: none.
-    - `--circlatorArgs <args>`: Arguments (other than inputs and outputs) to pass to Circlator. Default: none.
-    - `--forceCirclator`: Force Circlator to be used, regardless of the state of the Flye assembly.
-    - `--noCirclator`: Do not use Circlator, regardless of the state of the Flye assembly.
-- Also see [execution related parameters](#execution-related-parameters)
-
 <a id="evaluation"></a>
 
 #### Assembly evaluation: `evaluateChromosome.nf`, `evaluatePlasmid.nf`
@@ -298,6 +300,19 @@ To evaluate a plasmid, replace `evaluationChromosome.nf` with `evaluatePlasmid.n
 
 The only difference between the chromosome and plasmid evaluation is CheckM is not run for plasmids.
 
+##### Parameter descriptions
+
+**Required parameters:**
+
+- `--illumina1 <path>`: Path to 1st file for **cleaned** paired end Illumina reads. May be fastq or gzipped fastq.
+- `--illumina2 <path>`: Path to 2nd file for **cleaned** paired end Illumina reads. May be fastq or gzipped fastq.
+- `--longReads <path>`: Path to the **cleaned** long reads. May be fastq or gzipped fastq.
+- `--assembly <path>`: Path to fasta file of chromosome/plasmid assembly.
+- `--outdir <path>`: Path to the output directory, which is where all output files will be stored.
+
+**Optional parameters:**
+
+- See [execution related parameters](#execution-related-parameters)
 
 ##### Detailed description
 
@@ -356,21 +371,6 @@ The most important statistics are also saved to a single summary document, `chro
 
 As with other scripts, `nextflow.command.sh`, `nextflow.command.log` and `nextflow.exitcode` is saved for every process. Read more [here](#other-outputs).
 
-##### Parameter descriptions
-
-**Required parameters:**
-
-- `--illumina1 <path>`: Path to 1st file for **cleaned** paired end Illumina reads. May be fastq or gzipped fastq.
-- `--illumina2 <path>`: Path to 2nd file for **cleaned** paired end Illumina reads. May be fastq or gzipped fastq.
-- `--longReads <path>`: Path to the **cleaned** long reads. May be fastq or gzipped fastq.
-- `--assembly <path>`: Path to fasta file of chromosome/plasmid assembly.
-- `--outdir <path>`: Path to the output directory, which is where all output files will be stored.
-
-**Optional parameters:**
-
-- See [execution related parameters](#execution-related-parameters)
-
-
 #### Check dependencies: `checkDependencies.nf`
 
 ``` sh
@@ -378,7 +378,6 @@ nextflow run checkDependencies.nf [-work-dir <path>] [--condaEnvsDir <path>]
 ```
 
 See [execution related parameters](#execution-related-parameters) for descriptions of the optional parameters.
-
 
 ### Execution related parameters
 
