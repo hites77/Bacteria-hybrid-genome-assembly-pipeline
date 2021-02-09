@@ -183,7 +183,7 @@ Command line parameters are the same as `assemble.nf`.
 Assemble a genome from raw Illumina and Pacbio reads. The final assembly will be in the file `assembly/pilon/final_pilon_assembly.fa`. Some basic statistics (number of contigs, size of contigs, and circularity of contigs) will be given in the file `assembly/assembly-summary.json`.
 
 ``` sh
-nextflow run assemble.nf --illumina1 <path> --illumina2 <path> [--pacbio | --nanopore] <path> --outdir <path> \
+nextflow run assemble.nf --illumina1 <path> --illumina2 <path> (--pacbio | --nanopore) <path> --outdir <path> \
     [--shortReadsKeepPercent <percent>] [--shortReadsStartTrimq <percent>] [--shortReadsMinTrimq <percent>] \
     [--bbdukArgs <args>] [--filtlongArgs <args>] [--filtlongCheckThreshold <threshold>] \
     [--flyeArgs <args>] \
