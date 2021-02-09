@@ -294,13 +294,14 @@ process summariseAssembly {
     input:
     path assemblyFa
     path circularitySummary // json file
+    path flyeDir
 
     output:
     path 'assembly-summary.json'
 
     script:
     """
-    summarise_assembly.py $assemblyFa $circularitySummary > assembly-summary.json
+    summarise_assembly.py $assemblyFa $circularitySummary $flyeDir > assembly-summary.json
     """
 }
 
@@ -333,7 +334,9 @@ workflow assembleGenome {
                            flyeDirectory) 
     pilonPolish(circulariseIfNecessary.out.assembly, cleanedShort1, cleanedShort2)
 
-    summariseAssembly(pilonPolish.out.assemblyFa, circulariseIfNecessary.out.circularitySummary)
+    summariseAssembly(pilonPolish.out.assemblyFa,
+                      circulariseIfNecessary.out.circularitySummary,
+                      flyeDirectory)
 
     emit:
     assembly = pilonPolish.out.assemblyFa
