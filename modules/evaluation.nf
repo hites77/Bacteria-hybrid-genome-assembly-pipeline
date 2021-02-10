@@ -253,6 +253,9 @@ workflow evaluatePlasmid {
     longReadsCoverage(pubDirPrefix, assembly, cleanedLongReads)
     prokkaAnnotate(pubDirPrefix, assembly)
     quastEvaluate(pubDirPrefix, assembly, prokkaAnnotate.out.gff)
+    if (params.kofamscan) {
+        runKofamscan(pubDirPrefix, prokkaAnnotate.out.faa)
+    }
     makePlasmidSummary(
         shortReadsCoverage.out.stats.map { file(it.parent) }, // HACK
         longReadsCoverage.out.stats.map { file(it.parent) }, // HACK
