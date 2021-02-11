@@ -9,6 +9,7 @@ testAsmIlluminaBam = file('test-data/assembly-illumina.bam')
 testGff = file('test-data/assembly-prokka.gff')
 
 process testSamtools {
+    errorStrategy 'ignore'
     conda params.condaEnvsDir + '/urops-assembly'
 
     output:
@@ -22,6 +23,7 @@ process testSamtools {
 }
 
 process testBwa {
+    errorStrategy 'ignore'
     conda params.condaEnvsDir + '/urops-assembly'
     
     output:
@@ -39,6 +41,7 @@ process testBwa {
 }
 
 process testBbduk {
+    errorStrategy 'ignore'
     conda params.condaEnvsDir + '/urops-assembly'
 
     output:
@@ -52,6 +55,7 @@ process testBbduk {
 }
 
 process testFiltlong {
+    errorStrategy 'ignore'
     conda params.condaEnvsDir + '/urops-assembly'
 
     output:
@@ -64,6 +68,7 @@ process testFiltlong {
 }
 
 process testFlye {
+    errorStrategy 'ignore'
     conda params.condaEnvsDir + '/urops-assembly'
 
     output:
@@ -77,6 +82,7 @@ process testFlye {
 }
 
 process testCirclator {
+    errorStrategy 'ignore'
     conda params.condaEnvsDir + '/urops-circlator'
 
     output:
@@ -91,6 +97,7 @@ process testCirclator {
 }
 
 process testRacon {
+    errorStrategy 'ignore'
     conda params.condaEnvsDir + '/urops-assembly'
 
     output:
@@ -103,6 +110,7 @@ process testRacon {
 }
 
 process testCanu {
+    errorStrategy 'ignore'
     conda params.condaEnvsDir + '/urops-assembly'
     
     output:
@@ -115,6 +123,7 @@ process testCanu {
 }
 
 process testPilon {
+    errorStrategy 'ignore'
     conda params.condaEnvsDir + '/urops-assembly'
 
     output:
@@ -127,6 +136,7 @@ process testPilon {
     """
 }
 process testPlaton {
+    errorStrategy 'ignore'
     conda params.condaEnvsDir + '/urops-assembly'
 
     output:
@@ -141,6 +151,7 @@ process testPlaton {
 }
 
 process testPileup {
+    errorStrategy 'ignore'
     conda params.condaEnvsDir + '/urops-assembly'
 
     output:
@@ -154,6 +165,7 @@ process testPileup {
 }
 
 process testBbmap {
+    errorStrategy 'ignore'
     conda params.condaEnvsDir + '/urops-assembly'
 
     output:
@@ -167,6 +179,7 @@ process testBbmap {
 }
 
 process testProkka {
+    errorStrategy 'ignore'
     conda params.condaEnvsDir + '/urops-assembly'
 
     output:
@@ -179,6 +192,7 @@ process testProkka {
 }
 
 process testQuast {
+    errorStrategy 'ignore'
     conda params.condaEnvsDir + '/urops-assembly'
 
     output:
@@ -192,6 +206,7 @@ process testQuast {
 }
 
 process testMinimap2 {
+    errorStrategy 'ignore'
     conda params.condaEnvsDir + '/urops-assembly'
 
     output:
@@ -204,6 +219,7 @@ process testMinimap2 {
 }
 
 process testCheckm {
+    errorStrategy 'ignore'
     conda params.condaEnvsDir + '/urops-checkm'
 
     output:
@@ -219,41 +235,42 @@ process testCheckm {
 }
 
 process testPython_assemblyEnv {
+    errorStrategy 'ignore'
     conda params.condaEnvsDir + '/urops-assembly'
-
-    output:
-    path 'done'
 
     script:
     """
     test_python.py
-    touch done
     """
 }
 
 process testPython_circlatorEnv {
+    errorStrategy 'ignore'
     conda params.condaEnvsDir + '/urops-circlator'
-
-    output:
-    path 'done'
 
     script:
     """
     test_python.py
-    touch done
     """
 }
 
 process testPython_checkmEnv {
+    errorStrategy 'ignore'
     conda params.condaEnvsDir + '/urops-checkm'
-
-    output:
-    path 'done'
 
     script:
     """
     test_python.py
-    touch done
+    """
+}
+
+process failTest {
+    errorStrategy 'ignore'
+    conda params.condaEnvsDir + '/urops-checkm'
+
+    script:
+    """
+    run_nonsesnse
     """
 }
 
@@ -285,18 +302,5 @@ workflow checkAllDependencies {
     testCheckm()
     testPython_checkmEnv()
 
-    emit:
-    checksDone = testBbduk.out[0]
-        .mix(testFiltlong.out[0], testFlye.out[0],
-             testBwa.out[0], testPilon.out[0],
-             testPlaton.out[0], testRacon.out[0],
-             testCanu.out[0], testSamtools.out[0],
-             testMinimap2.out[0], testBbmap.out[0],
-             testPileup.out[0], testProkka.out[0],
-             testQuast.out[0], testCirclator.out[0],
-             testCheckm.out[0], testPython_assemblyEnv.out[0],
-             testPython_circlatorEnv.out[0], testPython_checkmEnv.out[0],
-        )
-        .toList()
-        .map({ true })
+    failTest()
 }

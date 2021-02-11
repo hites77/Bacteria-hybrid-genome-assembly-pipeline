@@ -116,14 +116,53 @@ Otherwise, download a zip file of the code and extract it to your desired locati
 
     - `PLATONDB` is the path to Platon's database, which will be downloaded in the next step.
 
-1. Download the databases needed by various tools:
+4. Download the databases needed by various tools:
    - **Platon database:** download the database at this [link](https://zenodo.org/record/4066768/files/db.tar.gz?download=1) and extract it to the file path specified for `PLATONDB`
 
-1. Check that all programs have been installed correctly:
+5. Check that all programs have been installed correctly:
     ```sh
     nextflow run checkDependencies.nf
     ```
     If your conda environments are stored somewhere other than `~/.conda/envs`, add the argument `--condaEnvsDir <path>`, replacing `<path>` with the path to the conda environments. 
+    
+    Check the stdout to see which dependency checks have failed. Note that `checkDependencies.nf` script itself will **NOT** fail and give a non-zero exit code, it will only print the errors to the command line.
+  
+    Example of the output when a dependency check has failed:
+    ```
+    N E X T F L O W  ~  version 20.10.0
+    Launching `checkDependencies.nf` [magical_brattain] - revision: 77e3ff929e
+    executor >  local (20)
+    [73/0e90af] process > checkAllDependencies:testBbduk               [100%] 1 of 1 ✔
+    [2d/f9b5b9] process > checkAllDependencies:testFiltlong            [100%] 1 of 1 ✔
+    [c5/2b477a] process > checkAllDependencies:testFlye                [100%] 1 of 1 ✔
+    [f5/fc9d37] process > checkAllDependencies:testBwa                 [100%] 1 of 1 ✔
+    [47/ce0101] process > checkAllDependencies:testPilon               [100%] 1 of 1 ✔
+    [02/fd44c6] process > checkAllDependencies:testPlaton              [100%] 1 of 1 ✔
+    [f9/24d6a7] process > checkAllDependencies:testRacon               [100%] 1 of 1 ✔
+    [2d/ddfc29] process > checkAllDependencies:testCanu                [100%] 1 of 1 ✔
+    [b1/742dfb] process > checkAllDependencies:testSamtools            [100%] 1 of 1 ✔
+    [8b/9a6576] process > checkAllDependencies:testMinimap2            [100%] 1 of 1 ✔
+    [2b/be540a] process > checkAllDependencies:testBbmap               [100%] 1 of 1 ✔
+    [ec/b2e849] process > checkAllDependencies:testPileup              [100%] 1 of 1 ✔
+    [3e/474dec] process > checkAllDependencies:testProkka              [100%] 1 of 1 ✔
+    [5e/008de6] process > checkAllDependencies:testQuast               [100%] 1 of 1 ✔
+    [50/8e6ff6] process > checkAllDependencies:testPython_assemblyEnv  [100%] 1 of 1 ✔
+    [60/336736] process > checkAllDependencies:testCirclator           [100%] 1 of 1 ✔
+    [d8/f9cb08] process > checkAllDependencies:testPython_circlatorEnv [100%] 1 of 1 ✔
+    [8b/0825d0] process > checkAllDependencies:testCheckm              [100%] 1 of 1 ✔
+    [25/18e33e] process > checkAllDependencies:testPython_checkmEnv    [100%] 1 of 1 ✔
+    [68/fcef28] process > checkAllDependencies:dummyTest               [100%] 1 of 1, failed: 1 ✔
+    Completed at: 09-Feb-2021 17:09:04
+    Duration    : 2m 27s
+    CPU hours   : 0.1 (0.3% failed)
+    Succeeded   : 19
+    Ignored     : 1
+    Failed      : 1
+    ```
+    
+  In this case, the dummyTest dependency check has failed. 
+  To figure out what caused the dummyTest to fail, you can check what was printed to the command line when dummyTest was run by opening the file `work/68/fcef28.../.command.log` (if you changed the working directory, replace `work` with the path to your working directory). Note that `fcef28...` refers to a folder whose name starts with `fcef28`.
+  
 
 ## Quick usage
 
