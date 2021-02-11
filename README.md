@@ -284,38 +284,47 @@ nextflow run assemble.nf --illumina1 <path> --illumina2 <path> (--pacbio | --nan
    - You can force Circlator to always run / never run using `--forceCirclator` / `--noCirclator`.
 1. Polish the assembly using Pilon (`pilonPolish`)
    - Pilon is run up to 6 times or until there are no changes.
-1. Save a summary of some basic statistics about the assembly (number of contigs, size of contigs, and circularity of contigs) to the file `assembly-summary.json` (`summariseAssembly`)
+1. Save a summary of some basic statistics about the assembly (number of contigs, size of contigs, and circularity of contigs, whether Flye _may_ have found contigs) to the file `assembly-summary.json` (`summariseAssembly`)
 
 ##### Output files
 
 - `<outdir>/`
+    - `assembly-summary.json`
     - `assembly/`
         - `flye/`
-          - Files in the Flye root directory.
-          - `22-plasmids/`
+            - Files in the Flye root directory.
+            - `22-plasmids/`
+            - \* Nextflow files
         - `racon/`
             - `final_racon_assembly.fa`: assembly after polishing with Racon for several iterations.
             - `final_racon_log.tsv`: whether Racon made a difference, and number of Racon iterations. (TODO)
+            - \* Nextflow files
         - `circlator/` (if Circlator was run)
-            - select Circlator output files.
+            - select Circlator output files
+            - \* Nextflow files
         - `pilon/`
             - **`final_pilon_assembly.fa`: the final assembly**
             - `pilonX.changes`: changes made during each Pilon iteration
             - `pilon_info.tsv`: number of Pilon iterations, and whether or not Pilon converged.
-        - `assembly-summary.json`
+            - \* Nextflow files
     - `reads/`
         - `short_cleaned/`
             - `illumina1.fq`: 1st set of cleaned Illumina reads.
             - `illumina2.fq`: 2nd set of cleaned Illumina reads.
             - `trimq_used.txt`: trimq score used by Bbduk.
+            - \* Nextflow files
         - `long_cleaned/`
             - `pacbio.fq`: cleaned pacbio reads
             - `above_10kb_reads_removed.tsv`: list of long reads above 10kb in size which where removed by Filtlong.
+            - \* Nextflow files
         - `long_canu/` (if canu was run)
             - `canu.correctedReads.fasta.gz`
             - Select Canu output files.
+            - \* Nextflow files
 
 <a id="other-outputs"></a>
+
+**\* Nextflow files:**
 
 In addition to the files created specifically by each process, the stdout, stderr, exit code and exact script run are also saved:
 - `nextflow.command.sh`: the script run by Nextflow.
@@ -367,32 +376,32 @@ The most important statistics are also saved to a single summary document, `chro
 ```
 {
     "avg short reads coverage": {
-        "contig_1": 372.3411
+        "contig_1": 171.4541
     },
     "short reads mapped": {
         "total reads": 9397580,
-        "mapped reads:": 207163,
-        "proportion mapped": 0.022044292253963253
+        "mapped reads:": 6462316,
+        "proportion mapped": 0.6876574607505337
     },
     "avg long reads coverage": {
-        "contig_1": 210.1854
+        "contig_1": 109.7114
     },
     "long reads mapped": {
-        "total reads": 86864,
-        "mapped reads:": 3390,
-        "proportion mapped": 0.03902652422177197
+        "total reads": 102343,
+        "mapped reads:": 73142,
+        "proportion mapped": 0.7146751609782789
     },
-    "assembly length": 69354,
+    "assembly length": 4642116,
     "contigs": 1,
-    "N50": 69354,
-    "GC": 0.7051000000000001,
-    "CDS": 79,
+    "N50": 4642116,
+    "GC": 0.741,
+    "CDS": 4071,
     "size by contig": {
-        "contig_1": 69354
+        "contig_1": 4642116
     },
     "errors": [],
-    "completeness": 0.0,
-    "contamination": 0.0
+    "completeness": 1.0,
+    "contamination": 0.015414258188824661
 }
 ```
 
@@ -449,6 +458,8 @@ TODO
 ## Tips 
 
 ### Periodically clear Nextflow's work directory
+
+
 ### Running the pipeline on clusters supporting OpenMPI
 
 TODO
