@@ -289,7 +289,7 @@ workflow circulariseIfNecessary {
 
 process summariseAssembly {
     conda params.condaEnvsDir + '/urops-assembly'
-    publishDir params.outdir + 'assembly/', mode: 'copy'
+    publishDir params.outdir + '/assembly/', mode: 'copy'
 
     input:
     path assemblyFa
