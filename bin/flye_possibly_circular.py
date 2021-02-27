@@ -22,7 +22,7 @@ from commons import bool_to_str
 
 def assembly_possibly_circular(flye_dir_or_info_txt):
     df = read_flye_info_txt(flye_dir_or_info_txt)
-    return any(is_yes(is_circular_str) for is_circular_str in df[TXT_COL_CIRCULAR]) or df.nrows > 1
+    return any(is_yes(is_circular_str) for is_circular_str in df[TXT_COL_CIRCULAR]) or len(df) > 1
 
 
 if __name__ == "__main__":
