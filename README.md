@@ -25,7 +25,7 @@
 - [Troubleshooting](#troubleshooting)
   * [Help! Where are all my files inside the `work/` directory?](#help-where-are-all-my-files-inside-the-work-directory)
   * [Resuming a script](#resuming-a-script)
-  * [Dealing with plasmids](#dealing-with-plasmids)
+  * [Finding plasmids](#finding-plasmids)
 - [Tips](#tips)
   * [Periodically clear Nextflow's work directory](#periodically-clear-nextflows-work-directory)
   * [Running the pipeline on clusters supporting OpenMPI](#running-the-pipeline-on-clusters-supporting-openmpi)
@@ -40,7 +40,7 @@ It requires (1) paired end Illumina short reads and (2) either Pacbio or Nanopor
 Both genome assembly as well as assembly evaluation are performed.
 Some major features are: stringent, but configurable read filtering criteria; detection of plasmids and possible contamination; automated invocation of assembly evaluation when possible.
 The pipeline tries to set reasonable defaults as much as possible, but most parameters can be adjusted easily if need be via command line options.
-    
+
 ## Tools used
 
 - Read filtering
@@ -184,7 +184,11 @@ nextflow run main.nf --illumina1 short_reads_1.fq.gz --illumina2 short_reads_2.f
 
 If you are using Nanopore long reads instead, replace `--pacbio` with `--nanopore`.
 
-If evaluation cannot be automatically carried out (eg. possibility of multiple bacterial genomes), a message will be printed to the command line. You will then have to invoke the evaluation script manually for each chromosome and plasmid using the [`evaluateChromosome.nf` and `evaluatePlasmid.nf`](#evaluation) scripts.
+If there are multiple contigs in the assembly, evaluation will not be carried out automatically and a message will be printed to the command line. Multiple contigs may mean that there are multiple bacterial species and hence multiple chromosomes and/or there are plasmids. To evaluate the assembly, you will have to:
+
+1. Separate out each chromosome and plasmid from the final assembly file into separate files. You may use Platon, which is included in one of the conda environments, to help identify plasmids. See [this section](#finding-plasmids) for more details.
+
+2. Invoke the evaluation script manually for each chromosome and plasmid using the [`evaluateChromosome.nf` and `evaluatePlasmid.nf`](#evaluation) scripts.
 
 It is also possible to run just genome assembly, without evaluation, using the [`assemble.nf` script](#genome-assembly-assemblenf).
 
@@ -214,6 +218,18 @@ _Note about format: In the detailed description section for each script, the nam
 #### Genome assembly + evaluation: `main.nf`
 
 Perform genome assembly using [`assemble.nf`](#genome-assembly-assemblenf) followed by assembly evaluation using [`evaluateChromosome.nf`](#assembly-evaluation-evaluatechromosomenf-evaluateplasmidnf), if the assembly contains exactly 1 contig. If there is more than 1 contig, then evaluation will not be carried out. It will be up to the user to inspect the assembly and decide how they want to split the contigs for evaluation. Evaluation can be carried out using the [`evaluateChromosome.nf` and `evaluatePlasmid.nf` scripts](#evaluation).
+
+**Nextflow Reports:**
+<a id="nextflow-reports"></a>
+
+In addition to the output files from `assemble.nf` and `evaluateChromsome.nf`, Nextflow also generates several reports summarising the pipeline execution, ie. what exactly it did when you run `nextflow run main.nf ...`  and useful information such as resource usage.
+
+These files will be found in the `<outdir>`. They are listed below:
+
+- `nextflow-report.html`: A document summarising the pipeline execution. Includes the exact command run, as well as resource usage, runtime and other information for each process. See [here](https://www.nextflow.io/docs/latest/tracing.html#execution-report) for a sample report.
+- `nextflow-timeline.html`: A chart showing when each process ran and how long they took.
+- `nextflow-trace.tsv`: Table of runtime, resource usage among other information, for each process. This is included in `nextflow-report.html`.
+
 
 Command line parameters are the same as `assemble.nf`.
 
@@ -275,6 +291,7 @@ nextflow run assemble.nf --illumina1 <path> --illumina2 <path> (--pacbio | --nan
 ##### Detailed description
 
 1. Clean short reads using Bbduk (`cleanShortReads`)
+   - Note that we have extended Bbduk so that it can find the best the trimq value to use such that at least X % of the reads are kept.
 1. Clean long reads using Filtlong (`cleanLongReads`)
 1. Form an initial assembly using the long reads with Flye (`flyeAssembly`)
 1. Polish the assembly using the long reads with Racon (`raconPolish`)
@@ -297,7 +314,7 @@ nextflow run assemble.nf --illumina1 <path> --illumina2 <path> (--pacbio | --nan
             - \* Nextflow files
         - `racon/`
             - `final_racon_assembly.fa`: assembly after polishing with Racon for several iterations.
-            - `final_racon_log.tsv`: whether Racon made a difference, and number of Racon iterations. (TODO)
+            - `final_racon_log.tsv`: whether Racon made a difference, and number of Racon iterations.
             - \* Nextflow files
         - `circlator/` (if Circlator was run)
             - select Circlator output files
@@ -330,6 +347,10 @@ In addition to the files created specifically by each process, the stdout, stder
 - `nextflow.command.sh`: the script run by Nextflow.
 - `nextflow.command.log`: the scripts's stderr and stdout.
 - `nextflow.exitcode`: the script's exit code.
+
+**Nextflow Reports:**
+
+As with `main.nf`, if `assemble.nf` was run alone (ie. you did `nextflow run assemble.nf ...`), the usaul [Nextflow reports](#nextflow-reports) will be created. 
 
 <a id="evaluation"></a>
 
@@ -417,7 +438,7 @@ The most important statistics are also saved to a single summary document, `chro
   - `checkm/` (for chromosome evaluation only)
   - `chromsome-summary.json` / `plasmid-summary.json`
 
-As with other scripts, `nextflow.command.sh`, `nextflow.command.log` and `nextflow.exitcode` is saved for every process. Read more [here](#other-outputs).
+As with other scripts, `nextflow.command.sh`, `nextflow.command.log` and `nextflow.exitcode` is saved for every process (read more [here](#other-outputs)) and the [Nextflow reports](#nextflow-reports) will be generated if `evaluateChromosome.nf`/`evaluatePlasmid.nf` was run alone.
 
 #### Check dependencies: `checkDependencies.nf`
 
@@ -451,27 +472,31 @@ Read more at:
 - https://www.nextflow.io/blog/2019/demystifying-nextflow-resume.html
 - https://www.nextflow.io/blog/2019/troubleshooting-nextflow-resume.html
 
-### Dealing with plasmids
+### Finding plasmids
 
-TODO 
+If there are multiple contigs in the assembly, it could mean that either mena that there are plasmid(s) in addition to the chromosome, and/or there are multiple chromosomes. The program [Platon](https://github.com/oschwengers/platon)  can take in the final assembly as input, and output likely plasmids. We have included Platon in the `urops-assembly` environment, so to use it, run `conda activate urops-assembly` first. See [Platon's documentation](https://github.com/oschwengers/platon) for instructions on how to use it and how to interpret the results. Bear in mind that Platon may miss out plasmids sometimes.
 
 ## Tips 
 
 ### Periodically clear Nextflow's work directory
 
+The work directory is where Nextflow stores temporary files. By default, this will be `work/`, inside the directory where Nextflow was launched from, however, it may be changed via the `-work-dir` flag.
+
+Some of the temporary files from this pipeline are rather large (eg. reads), so it is a good idea to periodically delete the contents of the work directory to save space on your computer/compute cluster. You should clear the work directory only when **there are no pipelines running** and you **do not intend to resume a previously run pipeline**.
 
 ### Running the pipeline on clusters supporting OpenMPI
 
-TODO
 `mpirun --pernode nextflow run main.nf -with-mpi [pipeline parameters]`
 
-We running nextflow via the `mpirun` command in order to take advantage of the [OpenMPI standard](https://www.open-mpi.org/) for improved performance.
+You can nextflow via the `mpirun` command to take advantage of the [OpenMPI standard](https://www.open-mpi.org/) for improved performance.
 You can read more about how Nextflow uses OpenMPI [here](https://www.nextflow.io/docs/latest/ignite.html?highlight=mpi#execution-with-mpi) and [here](https://www.nextflow.io/blog/2015/mpi-like-execution-with-nextflow.html).
 
 
 ### Viewing the assembly graph
-TODO
+
+Flye generates an assembly graph which can be visualised using programs such as [Bandage](https://github.com/rrwick/Bandage) or [AGB](https://github.com/almiheenko/AGB). The graph file is saved at `<outdir>/assembly/flye/assembly_graph.gfa`.
 
 ### Repeated configs 
+
 TODO
 (profiles, -c config)
