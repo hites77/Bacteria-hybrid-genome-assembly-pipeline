@@ -1,4 +1,4 @@
-name: urops-checkm
+name: ap-checkm
 channels:
   - conda-forge
   - bioconda

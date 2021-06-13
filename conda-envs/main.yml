@@ -1,4 +1,4 @@
-name: urops-assembly
+name: ap-main
 channels:
   - conda-forge
   - bioconda

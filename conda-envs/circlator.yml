@@ -1,4 +1,4 @@
-name: urops-circlator
+name: ap-circlator
 channels:
   - conda-forge
   - bioconda

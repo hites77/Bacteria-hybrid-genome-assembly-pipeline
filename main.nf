@@ -3,6 +3,7 @@ nextflow.enable.dsl=2
 include { assembleGenome } from './modules/assembly.nf'
 include { evaluateChromosome } from './modules/evaluation.nf'
 include { validateParams } from './assemble.nf'
+include { getCondaEnv } from './commons.nf'
 
 // parameter validation
 validateParams()
@@ -10,7 +11,7 @@ validateParams()
 // processes and workflows
 
 process findReadyToEvaluate {
-    conda params.condaEnvsDir + 'urops-assembly'
+    conda "${getCondaEnv(params.mainEnv)}"
 
     input:
     path assemblyFa

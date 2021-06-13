@@ -95,18 +95,18 @@ Otherwise, download a zip file of the code and extract it to your desired locati
 
    cd conda-envs
 
-    # create the urops-assembly environment
-    conda env create -f assembly.yml
-    # create the urops-checkm environment
+    # create the ap-main environment
+    conda env create -f main.yml
+    # create the ap-checkm environment
     conda env create -f checkm.yml
-    # create the urops-circlator environment
+    # create the ap-circlator environment
     conda env create -f circlator.yml
    ```
 
-   b. Set the `PILONJAR` and `PLATONDB` environment variables for the urops-assembly environment:
+   b. Set the `PILONJAR` and `PLATONDB` environment variables for the `ap-main` environment:
 
     ```sh
-    conda activate urops-assembly
+    conda activate ap-main
     conda env config vars set PILONJAR=<path to pilon jar file> # change this
     # example: conda env config vars set PILONJAR=~/.conda/pkgs/pilon-1.23-2/share/pilon-1.23-2/pilon-1.23.jar
     conda env config vars set PLATONDB=<path to platon database> # change this
@@ -146,7 +146,7 @@ Otherwise, download a zip file of the code and extract it to your desired locati
     [ec/b2e849] process > checkAllDependencies:testPileup              [100%] 1 of 1 ✔
     [3e/474dec] process > checkAllDependencies:testProkka              [100%] 1 of 1 ✔
     [5e/008de6] process > checkAllDependencies:testQuast               [100%] 1 of 1 ✔
-    [50/8e6ff6] process > checkAllDependencies:testPython_assemblyEnv  [100%] 1 of 1 ✔
+    [50/8e6ff6] process > checkAllDependencies:testPython_mainEnv      [100%] 1 of 1 ✔
     [60/336736] process > checkAllDependencies:testCirclator           [100%] 1 of 1 ✔
     [d8/f9cb08] process > checkAllDependencies:testPython_circlatorEnv [100%] 1 of 1 ✔
     [8b/0825d0] process > checkAllDependencies:testCheckm              [100%] 1 of 1 ✔
@@ -170,7 +170,7 @@ Otherwise, download a zip file of the code and extract it to your desired locati
 
 Use Fastqc and Nanoplot (or any programs) to evaluate the quality of short reads and long reads (respectively) to decide if the [default criteria used for read filtering](#assemble-parameter-desc) are appropriate.
 
-Fastqc and Nanoplot are included in the `urops-assembly` conda environment, so just run `conda activate urops-assembly` and you will be able to run the `fastqc` and `NanoPlot` commands.
+Fastqc and Nanoplot are included in the `ap-main` conda environment, so just run `conda activate ap-main` and you will be able to run the `fastqc` and `NanoPlot` commands.
 
 ### 2. Assemble and evaluate the reads
 
@@ -474,7 +474,7 @@ Read more at:
 
 ### Finding plasmids
 
-If there are multiple contigs in the assembly, it could mean that either mena that there are plasmid(s) in addition to the chromosome, and/or there are multiple chromosomes. The program [Platon](https://github.com/oschwengers/platon)  can take in the final assembly as input, and output likely plasmids. We have included Platon in the `urops-assembly` environment, so to use it, run `conda activate urops-assembly` first. See [Platon's documentation](https://github.com/oschwengers/platon) for instructions on how to use it and how to interpret the results. Bear in mind that Platon may miss out plasmids sometimes.
+If there are multiple contigs in the assembly, it could mean that either mena that there are plasmid(s) in addition to the chromosome, and/or there are multiple chromosomes. The program [Platon](https://github.com/oschwengers/platon)  can take in the final assembly as input, and output likely plasmids. We have included Platon in the `ap-main` environment, so to use it, run `conda activate ap-main` first. See [Platon's documentation](https://github.com/oschwengers/platon) for instructions on how to use it and how to interpret the results. Bear in mind that Platon may miss out plasmids sometimes.
 
 ## Tips 
 

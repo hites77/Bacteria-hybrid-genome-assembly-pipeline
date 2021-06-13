@@ -37,3 +37,7 @@ def getDirectory(fileList) {
 def mapToDirectory(fileListChan) {
     return fileListChan.map { getDirectory(it) }
 }
+
+def getCondaEnv(envName) {
+    return params.condaEnvsDir + '/' + envName
+}

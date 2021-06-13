@@ -1,5 +1,7 @@
 nextflow.enable.dsl=2
 
+include { getCondaEnv } from './commons.nf'
+
 testIllumina1 = file('test-data/illumina1.fq')
 testIllumina2 = file('test-data/illumina2.fq')
 testPacbio = file('test-data/pacbio.fq') 
@@ -10,7 +12,7 @@ testGff = file('test-data/assembly-prokka.gff')
 
 process testSamtools {
     errorStrategy 'ignore'
-    conda params.condaEnvsDir + '/urops-assembly'
+    conda "${getCondaEnv(params.mainEnv)}"
 
     output:
     path "input.bam.bai"
@@ -24,7 +26,7 @@ process testSamtools {
 
 process testBwa {
     errorStrategy 'ignore'
-    conda params.condaEnvsDir + '/urops-assembly'
+    conda "${getCondaEnv(params.mainEnv)}"
     
     output:
     path "input.fa.amb"
@@ -42,7 +44,7 @@ process testBwa {
 
 process testBbduk {
     errorStrategy 'ignore'
-    conda params.condaEnvsDir + '/urops-assembly'
+    conda "${getCondaEnv(params.mainEnv)}"
 
     output:
     path 'cleaned_illumina1.fq'
@@ -56,7 +58,7 @@ process testBbduk {
 
 process testFiltlong {
     errorStrategy 'ignore'
-    conda params.condaEnvsDir + '/urops-assembly'
+    conda "${getCondaEnv(params.mainEnv)}"
 
     output:
     path 'cleaned_pacbio.fq'
@@ -69,7 +71,7 @@ process testFiltlong {
 
 process testFlye {
     errorStrategy 'ignore'
-    conda params.condaEnvsDir + '/urops-assembly'
+    conda "${getCondaEnv(params.mainEnv)}"
 
     output:
     path 'flye/assembly.fasta'
@@ -83,7 +85,7 @@ process testFlye {
 
 process testCirclator {
     errorStrategy 'ignore'
-    conda params.condaEnvsDir + '/urops-circlator'
+    conda "${getCondaEnv(params.circlatorEnv)}"
 
     output:
     path 'circlator-test/06.fixstart.fasta'
@@ -98,7 +100,7 @@ process testCirclator {
 
 process testRacon {
     errorStrategy 'ignore'
-    conda params.condaEnvsDir + '/urops-assembly'
+    conda "${getCondaEnv(params.mainEnv)}"
 
     output:
     path 'test_racon_assembly.fa'
@@ -111,7 +113,7 @@ process testRacon {
 
 process testCanu {
     errorStrategy 'ignore'
-    conda params.condaEnvsDir + '/urops-assembly'
+    conda "${getCondaEnv(params.mainEnv)}"
     
     output:
     path 'canu.correctedReads.fasta.gz'
@@ -124,7 +126,7 @@ process testCanu {
 
 process testPilon {
     errorStrategy 'ignore'
-    conda params.condaEnvsDir + '/urops-assembly'
+    conda "${getCondaEnv(params.mainEnv)}"
 
     output:
     path 'pilon.fasta'
@@ -137,7 +139,7 @@ process testPilon {
 }
 process testPlaton {
     errorStrategy 'ignore'
-    conda params.condaEnvsDir + '/urops-assembly'
+    conda "${getCondaEnv(params.mainEnv)}"
 
     output:
     path 'assembly.chromosome.fasta'
@@ -152,7 +154,7 @@ process testPlaton {
 
 process testPileup {
     errorStrategy 'ignore'
-    conda params.condaEnvsDir + '/urops-assembly'
+    conda "${getCondaEnv(params.mainEnv)}"
 
     output:
     path 'stats.txt'
@@ -166,7 +168,7 @@ process testPileup {
 
 process testBbmap {
     errorStrategy 'ignore'
-    conda params.condaEnvsDir + '/urops-assembly'
+    conda "${getCondaEnv(params.mainEnv)}"
 
     output:
     path 'stats.txt'
@@ -180,7 +182,7 @@ process testBbmap {
 
 process testProkka {
     errorStrategy 'ignore'
-    conda params.condaEnvsDir + '/urops-assembly'
+    conda "${getCondaEnv(params.mainEnv)}"
 
     output:
     path 'prokka-test/prokka.gff' // will be others, but just check 1 i guess
@@ -193,7 +195,7 @@ process testProkka {
 
 process testQuast {
     errorStrategy 'ignore'
-    conda params.condaEnvsDir + '/urops-assembly'
+    conda "${getCondaEnv(params.mainEnv)}"
 
     output:
     path 'quast/transposed_report.tsv'
@@ -207,7 +209,7 @@ process testQuast {
 
 process testMinimap2 {
     errorStrategy 'ignore'
-    conda params.condaEnvsDir + '/urops-assembly'
+    conda "${getCondaEnv(params.mainEnv)}"
 
     output:
     path 'minimap-test.sam'
@@ -220,7 +222,7 @@ process testMinimap2 {
 
 process testCheckm {
     errorStrategy 'ignore'
-    conda params.condaEnvsDir + '/urops-checkm'
+    conda "${getCondaEnv(params.checkmEnv)}"
 
     output:
     path 'checkm-results'
@@ -234,9 +236,9 @@ process testCheckm {
     """
 }
 
-process testPython_assemblyEnv {
+process testPython_mainEnv {
     errorStrategy 'ignore'
-    conda params.condaEnvsDir + '/urops-assembly'
+    conda "${getCondaEnv(params.mainEnv)}"
 
     script:
     """
@@ -246,7 +248,7 @@ process testPython_assemblyEnv {
 
 process testPython_circlatorEnv {
     errorStrategy 'ignore'
-    conda params.condaEnvsDir + '/urops-circlator'
+    conda "${getCondaEnv(params.circlatorEnv)}"
 
     script:
     """
@@ -256,21 +258,11 @@ process testPython_circlatorEnv {
 
 process testPython_checkmEnv {
     errorStrategy 'ignore'
-    conda params.condaEnvsDir + '/urops-checkm'
+    conda "${getCondaEnv(params.checkmEnv)}"
 
     script:
     """
     test_python.py
-    """
-}
-
-process failTest {
-    errorStrategy 'ignore'
-    conda params.condaEnvsDir + '/urops-checkm'
-
-    script:
-    """
-    run_nonsesnse
     """
 }
 
@@ -292,7 +284,7 @@ workflow checkAllDependencies {
     testPileup()
     testProkka()
     testQuast()
-    testPython_assemblyEnv()
+    testPython_mainEnv()
 
     // urops-circlator environment
     testCirclator()
@@ -301,6 +293,4 @@ workflow checkAllDependencies {
     // urops-checkm environment
     testCheckm()
     testPython_checkmEnv()
-
-    failTest()
 }

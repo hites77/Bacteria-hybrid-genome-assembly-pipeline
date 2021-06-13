@@ -2,7 +2,7 @@ nextflow.enable.dsl=2
 
 import LongRead
 import LongReadTypeException
-include { getDirectory; mapToDirectory } from './commons.nf'
+include { getDirectory; mapToDirectory; getCondaEnv } from './commons.nf'
 
 outdirs = {}
 outdirs.cleanShortReads = 'reads/short_cleaned/'
@@ -16,7 +16,7 @@ outdirs.pilonPolish = 'assembly/pilon/'
 process cleanShortReads {
     publishDir params.outdir + '/' + outdirs.cleanShortReads, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
     publishDir params.outdir, mode: 'copy'
-    conda params.condaEnvsDir + '/urops-assembly'
+    conda "${getCondaEnv(params.mainEnv)}"
 
     input:
     path illumina1Fq
@@ -45,7 +45,7 @@ process cleanShortReads {
 process cleanLongReads {
     publishDir params.outdir + '/' + outdirs.cleanLongReads, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
     publishDir params.outdir, mode: 'copy'
-    conda params.condaEnvsDir + '/urops-assembly'
+    conda "${getCondaEnv(params.mainEnv)}"
 
     input:
     path longReadsFq
@@ -74,7 +74,7 @@ process cleanLongReads {
 process flyeAssembly {
     publishDir params.outdir + '/' +outdirs.flyeAssembly, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
     publishDir params.outdir, mode: 'copy'
-    conda params.condaEnvsDir + '/urops-assembly'
+    conda "${getCondaEnv(params.mainEnv)}"
 
     input:
     path longReadFq
@@ -103,7 +103,7 @@ process flyeAssembly {
 process raconPolish {
     publishDir params.outdir + '/' + outdirs.raconPolish, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
     publishDir params.outdir + '/' + outdirs.raconPolish, mode: 'copy'
-    conda params.condaEnvsDir + '/urops-assembly'
+    conda "${getCondaEnv(params.mainEnv)}"
 
     input:
     path assemblyFa
@@ -125,7 +125,7 @@ process raconPolish {
 process canuCorrect {
     publishDir params.outdir + '/' + outdirs.canuCorrect, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
     publishDir params.outdir, mode: 'copy'
-    conda params.condaEnvsDir + '/urops-assembly'
+    conda "${getCondaEnv(params.mainEnv)}"
     
     input:
     path longReadsFq
@@ -156,7 +156,7 @@ process canuCorrect {
 process circlator {
     publishDir params.outdir + '/' + outdirs.circlator, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
     publishDir params.outdir, mode: 'copy'
-    conda params.condaEnvsDir + '/urops-circlator'
+    conda "${getCondaEnv(params.circlatorEnv)}"
     
     input:
     path assemblyFa
@@ -187,7 +187,7 @@ process circlator {
 process pilonPolish {
     publishDir params.outdir + '/' + outdirs.pilonPolish, mode: 'copy', pattern: '{.command.sh,.command.log,.exitcode}', saveAs: { 'nextflow' + it }
     publishDir params.outdir + '/' + outdirs.pilonPolish, mode: 'copy'
-    conda params.condaEnvsDir + '/urops-assembly'
+    conda "${getCondaEnv(params.mainEnv)}"
     
     input:
     path assemblyFa
@@ -212,7 +212,7 @@ process pilonPolish {
 }
 
 process shouldCirculariseOrNot {
-    conda params.condaEnvsDir + '/urops-assembly'
+    conda "${getCondaEnv(params.mainEnv)}"
 
     input:
     path assemblyFa
@@ -248,7 +248,7 @@ process shouldCirculariseOrNot {
 }
 
 process flyeCircularitySummary {
-    conda params.condaEnvsDir + '/urops-assembly'
+    conda "${getCondaEnv(params.mainEnv)}"
 
     input:
     path flyeDirectory
@@ -288,7 +288,7 @@ workflow circulariseIfNecessary {
 }
 
 process summariseAssembly {
-    conda params.condaEnvsDir + '/urops-assembly'
+    conda "${getCondaEnv(params.mainEnv)}"
     publishDir params.outdir + '/assembly/', mode: 'copy'
 
     input:

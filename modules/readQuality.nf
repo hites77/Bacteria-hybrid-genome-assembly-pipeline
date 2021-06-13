@@ -1,8 +1,10 @@
 nextflow.enable.dsl=2
 
+include { getCondaEnv } from './commons.nf'
+
 process assessShortReads {
     publishDir "${params.outdir}/fastqc", mode: 'move'
-    conda params.condaEnvsDir + "urops-assembly"
+    conda "${getCondaEnv(params.mainEnv)}"
     
     input:
     path illumina1Fq
@@ -20,7 +22,7 @@ process assessShortReads {
 
 process assessLongReads {
     publishDir "${params.outdir}/nanoplot", mode: 'move'
-    conda params.condaEnvsDir + "urops-assembly"
+    conda "${getCondaEnv(params.mainEnv)}"
     
     input:
     path pacbioFq
