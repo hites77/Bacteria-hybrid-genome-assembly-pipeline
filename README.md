@@ -104,11 +104,13 @@ Otherwise, download a zip file of the code and extract it to your desired locati
    ```
 
    b. Set the `PILONJAR` and `PLATONDB` environment variables for the `ap-main` environment:
+   
+   Make sure to use the full path (eg. `/home/your_username/path/to/file` not `~/path/to/file`), as conda will set the environment variables verbatim without path name expansion. 
 
     ```sh
     conda activate ap-main
     conda env config vars set PILONJAR=<path to pilon jar file> # change this
-    # example: conda env config vars set PILONJAR=~/.conda/pkgs/pilon-1.23-2/share/pilon-1.23-2/pilon-1.23.jar
+    # example: conda env config vars set PILONJAR=/home/your_username/.conda/pkgs/pilon-1.23-2/share/pilon-1.23-2/pilon-1.23.jar
     conda env config vars set PLATONDB=<path to platon database> # change this
     ```
 
