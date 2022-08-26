@@ -70,7 +70,7 @@ The pipeline tries to set reasonable defaults as much as possible, but most para
 
 - Linux
 - Java (use Java version required by Nextflow)
-- [Nextflow](https://www.nextflow.io/) v20.10 or later
+- [Nextflow](https://www.nextflow.io/) v20.10 or later (conda install -c bioconda nextflow=20.10)
 - Conda. Preferably, use the current version, however older versions which use `conda activate` (rather than `source activate`) ought to work as well.
 - Git (optional, but recommended)
     - Git will be used to clone the respository. It is also possible to download a zip of the respository instead, but it is preferable to use git as it is easier to download updates for the pipeline in the future.
