@@ -5,20 +5,19 @@ channels:
   - defaults
 dependencies:
   - fastqc=0.11.9
-  - nanoplot=1.32.1
-  - bbmap=38.87
+  - bbmapy
   - filtlong=0.2.0
-  - flye=2.8.2
-  - minimap2=2.17
-  - racon=1.4.13
-  - pilon=1.23
+  - flye=2.9.1
+  - minimap2=2.24
+  - racon=1.5.0
+  - pilon=1.24
   - prokka=1.14.6
-  - fastani=1.32
-  - quast=5.0.2
-  - platon=1.5.0
-  - canu=2.1.1
-  - bwa=0.7.13
-  - samtools=1.3.0
+  - fastani=1.33
+  - quast=5.2.0
+  - platon=1.6
+  - canu=2.2
+  - samtools=1.6
+  - nanoplot=1.40.0
   # python dependencies
   - python>=3.6
   - biopython=1.78
