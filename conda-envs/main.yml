@@ -5,7 +5,7 @@ channels:
   - defaults
 dependencies:
   - fastqc=0.11.9
-  - bbmapy
+  - bbmap
   - filtlong=0.2.0
   - flye=2.9.1
   - minimap2=2.24
