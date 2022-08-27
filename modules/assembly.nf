@@ -85,7 +85,7 @@ process flyeAssembly {
     path '.command.log'
     path '.exitcode'
     path outdirs.flyeAssembly + 'assembly.fasta', emit: assemblyFa
-    path outdirs.flyeAssembly + '22-plasmids/**'
+    # path outdirs.flyeAssembly + '22-plasmids/**'  #plasmid parameter becomes absolete in latest flye version
     path outdirs.flyeAssembly + 'flye.log'
     path outdirs.flyeAssembly + 'assembly_graph.*'
     path outdirs.flyeAssembly + 'assembly_info.txt'
@@ -96,7 +96,7 @@ process flyeAssembly {
     inputFlag = longReadType == LongRead.PACBIO ? '--pacbio-raw' : '--nano-raw'
     """
     mkdir -p ${outdirs.flyeAssembly} # flye can only create 1 dir
-    flye --plasmids --threads $params.threads $inputFlag $longReadFq -o ${outdirs.flyeAssembly} $params.flyeArgs
+    flye --threads $params.threads $inputFlag $longReadFq -o ${outdirs.flyeAssembly} $params.flyeArgs
     """
 }
 
