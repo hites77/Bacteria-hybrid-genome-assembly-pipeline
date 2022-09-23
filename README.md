@@ -312,7 +312,8 @@ nextflow run assemble.nf --illumina1 <path> --illumina2 <path> (--pacbio | --nan
     - `assembly/`
         - `flye/`
             - Files in the Flye root directory.
-            - `22-plasmids/`
+            - assembly.fasta : inital assembly
+            - assembly_graph.gfa : assembly graph, which can be visualized using Bandage tools if there are multiple contigs to get insight on resolving it
             - \* Nextflow files
         - `racon/`
             - `final_racon_assembly.fa`: assembly after polishing with Racon for several iterations.
