@@ -274,7 +274,7 @@ nextflow run assemble.nf --illumina1 <path> --illumina2 <path> (--pacbio | --nan
     - `--filtlongArgs <args>`: Arguments (other than inputs and outputs) to pass to Filtlong. Default: `--min_length 1000 --keep_percent 90 --trim --split 500 --mean_q_weight 10`.
     - `--filtlongCheckThreshold <number>[k|m|g]`: Flag reads above the given length (eg. 10, 10k, 10m, 10g) which were removed by Filtlong. The number of these reads will be printed to stdout and the IDs and lengths of these reads will be saved to a TSV file. Default: 10k.
 - Flye:
-    - `--flyeArgs <args>`: Arguments (other than inputs, outputs, threads and `--plasmids`) to pass to Flye. Default: none.
+    - `--flyeArgs <args>`: Arguments (other than inputs, outputs, and threads) to pass to Flye. Default: none.
 - Racon:
     - `--raconMaxIters <number>`: Maximum number of iterations to run Racon for. Default: 4.
     - `--raconArgs <args>`: Arguments (other than inputs, outputs, and threads) to pass to Racon. Default: `-m 8 -x -6 -g -8 -w 500`.
@@ -474,9 +474,16 @@ Read more at:
 - https://www.nextflow.io/blog/2019/demystifying-nextflow-resume.html
 - https://www.nextflow.io/blog/2019/troubleshooting-nextflow-resume.html
 
-### Finding plasmids
+### Multiple contigs / Finding plasmids
 
-If there are multiple contigs in the assembly, it could mean that either mena that there are plasmid(s) in addition to the chromosome, and/or there are multiple chromosomes. The program [Platon](https://github.com/oschwengers/platon)  can take in the final assembly as input, and output likely plasmids. We have included Platon in the `ap-main` environment, so to use it, run `conda activate ap-main` first. See [Platon's documentation](https://github.com/oschwengers/platon) for instructions on how to use it and how to interpret the results. Bear in mind that Platon may miss out plasmids sometimes.
+If there are multiple contigs in the assembly, it could mean that either mean that there are plasmid(s) in addition to the chromosome, and/or there are multiple chromosomes. The program [Platon](https://github.com/oschwengers/platon)  can take in the final assembly as input, and output likely plasmids. We have included Platon in the `ap-main` environment, so to use it:
+1. run `conda activate ap-main` first.
+2. platon --db <path to platon db> --prefix fa final_pilon_assembly.fa -t 10   
+ 
+ (the final_pilon_assembly.fa will be in pilon directory)
+
+If plamsid like element are detected then two files will be genetated chromosome.fasta and plasmid.fasta. A tsv file will be generated which gives status about plasmid like contigs.
+See [Platon's documentation](https://github.com/oschwengers/platon) for more informations. Bear in mind that Platon may miss out plasmids sometimes.
 
 ## Tips 
 
