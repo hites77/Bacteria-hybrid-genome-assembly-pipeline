@@ -103,7 +103,7 @@ Otherwise, download a zip file of the code and extract it to your desired locati
     conda env create -f circlator.yml
    ```
    If solving step for creating ap-main environment is taking unsual longer time then one can proceed as:
-   conda create -n ap-main install flye canu nanoplot
+   conda create -n ap-main flye canu nanoplot
    conda activate ap-main
    conda install fastqc racon pilon bbmap filtlong platon
    conda install quast prokka fastani
