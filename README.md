@@ -102,7 +102,12 @@ Otherwise, download a zip file of the code and extract it to your desired locati
     # create the ap-circlator environment
     conda env create -f circlator.yml
    ```
-
+   If solving step for creating ap-main environment is taking unsual longer time then one can proceed as:
+   conda create -n ap-main install flye canu nanoplot
+   conda activate ap-main
+   conda install fastqc racon pilon bbmap filtlong platon
+   conda install quast prokka fastani
+   
    b. Set the `PILONJAR` and `PLATONDB` environment variables for the `ap-main` environment:
    
    Make sure to use the full path (eg. `/home/your_username/path/to/file` not `~/path/to/file`), as conda will set the environment variables verbatim without path name expansion. 
